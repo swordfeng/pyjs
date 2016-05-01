@@ -1,0 +1,22 @@
+{
+  "name": "pyjs",
+  "version": "0.1.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/swordfeng/pyjs.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/swordfeng/pyjs/issues"
+  },
+  "homepage": "https://github.com/swordfeng/pyjs#readme",
+  "dependencies": {
+    "nan": "^2.3.2"
+  }
+}
