@@ -17,6 +17,10 @@ namespace pyjs {
 
     void init(Local<Object> exports) {
         Py_Initialize();
+        // add current directory to path
+        PyObject *sysPath = PySys_GetObject("path");
+        PyObject *path = PyUnicode_FromString("");
+        int result = PyList_Insert(sysPath, 0, path);
         exports->Set(Nan::New("eval").ToLocalChecked(),
                 Nan::New<FunctionTemplate>(eval)->GetFunction());
     }
