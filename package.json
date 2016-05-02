@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "mocha"
+    "test": "node-gyp build && mocha"
   },
   "repository": {
     "type": "git",
@@ -17,6 +17,8 @@
   },
   "homepage": "https://github.com/swordfeng/pyjs#readme",
   "dependencies": {
+    "chai": "^3.5.0",
+    "jsesc": "^1.0.0",
     "nan": "^2.3.2"
   }
 }
