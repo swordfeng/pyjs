@@ -49,4 +49,12 @@ describe('PyObject', function () {
             assert.equal(15, pyobj.value());
         })
     });
+    describe('prototype', function () {
+        it('a.__proto__.__proto__ === PyObject.prototype', function () {
+            var a = PyObject('abc');
+            function makeb() {}
+            makeb.prototype = a;
+            assert(new makeb().value(), 'abc');
+        });
+    });
 });

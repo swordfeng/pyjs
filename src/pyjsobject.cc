@@ -3,8 +3,7 @@
 #include <iostream>
 #include <cassert>
 
-Nan::Persistent<v8::Function> PyjsObject::constructor;
-Nan::Persistent<v8::FunctionTemplate> PyjsObject::functpl;
+Nan::Persistent<v8::FunctionTemplate> PyjsObject::constructorTpl;
 
 PyjsObject::PyjsObject(): object(nullptr) {}
 PyjsObject::~PyjsObject() { Py_XDECREF(object); }
@@ -21,6 +20,20 @@ PyObject *PyjsObject::GetObject() {
     return object;
 }
 
+PyjsObject *PyjsObject::UnWrap(v8::Local<v8::Object> object) {
+    Nan::HandleScope scope;
+    // find real `this`
+    while (!IsInstance(object)) {
+        v8::Local<v8::Value> prototypeValue = object->GetPrototype();
+        if (prototypeValue->IsNull()) {
+            // throw
+            return nullptr;
+        }
+        object = prototypeValue->ToObject();
+    }
+    return ObjectWrap::Unwrap<PyjsObject>(object);
+}
+
 void PyjsObject::Init(v8::Local<v8::Object> exports) {
     Nan::HandleScope scope;
 
@@ -35,37 +48,42 @@ void PyjsObject::Init(v8::Local<v8::Object> exports) {
     Nan::SetMethod(prototpl, "value", Value);
     Nan::SetMethod(prototpl, "attr", Attr);
 
-    constructor.Reset(tpl->GetFunction());
-    functpl.Reset(tpl);
+    constructorTpl.Reset(tpl);
     exports->Set(Nan::New("PyObject").ToLocalChecked(), tpl->GetFunction());
 }
 
 void PyjsObject::New(const Nan::FunctionCallbackInfo<v8::Value> &args) {
+    Nan::HandleScope scope;
+    v8::Local<v8::Object> thisObject;
+    if (!args.IsConstructCall()) {
+        v8::Local<v8::Function> cons = Nan::New(constructorTpl)->GetFunction();
+        thisObject = cons->NewInstance();
+    } else {
+        thisObject = args.This();
+    }
     PyjsObject *wrapper = new PyjsObject();
-    wrapper->Wrap(args.This());
+    wrapper->Wrap(thisObject);
     if (args.Length() == 1) { // make a value
         wrapper->SetObject(JsToPy(args[0]));
     }
-    args.GetReturnValue().Set(args.This());
+    args.GetReturnValue().Set(thisObject);
 }
 
 void PyjsObject::Value(const Nan::FunctionCallbackInfo<v8::Value> &args) {
-    PyjsObject *wrapper = ObjectWrap::Unwrap<PyjsObject>(args.This());
-    PyObject *object = wrapper->object;
     Nan::HandleScope scope;
+    PyjsObject *wrapper = UnWrap(args.This());
+    PyObject *object = wrapper->object;
     args.GetReturnValue().Set(PyToJs(object));
 }
 
 void PyjsObject::Repr(const Nan::FunctionCallbackInfo<v8::Value> &args) {
-    PyjsObject *wrapper = ObjectWrap::Unwrap<PyjsObject>(args.This());
-    assert(wrapper->object);
+    PyjsObject *wrapper = UnWrap(args.This());
     Nan::HandleScope scope;
     args.GetReturnValue().Set(NewInstance(PyObject_Repr(wrapper->object)));
 }
 
 void PyjsObject::Attr(const Nan::FunctionCallbackInfo<v8::Value> &args) {
-    PyObject *object = ObjectWrap::Unwrap<PyjsObject>(args.This())->object;
-    assert(object);
+    PyObject *object = UnWrap(args.This())->object;
     Nan::HandleScope scope;
     PyObject *attr = JsToPy(args[0]);
     if (args.Length() == 1) {
@@ -87,7 +105,7 @@ void PyjsObject::Attr(const Nan::FunctionCallbackInfo<v8::Value> &args) {
 // steal one ref
 v8::Local<v8::Object> PyjsObject::NewInstance(PyObject *object) {
     Nan::EscapableHandleScope scope;
-    v8::Local<v8::Function> cons = Nan::New<v8::Function>(constructor);
+    v8::Local<v8::Function> cons = Nan::New<v8::FunctionTemplate>(constructorTpl)->GetFunction();
     v8::Local<v8::Object> instance = cons->NewInstance(0, {});
     PyjsObject *wrapper = ObjectWrap::Unwrap<PyjsObject>(instance);
     wrapper->SetObject(object);
@@ -96,5 +114,5 @@ v8::Local<v8::Object> PyjsObject::NewInstance(PyObject *object) {
 
 bool PyjsObject::IsInstance(v8::Local<v8::Object> object) {
     Nan::HandleScope scope;
-    return Nan::New(functpl)->HasInstance(object);
+    return Nan::New(constructorTpl)->HasInstance(object);
 }
