@@ -54,15 +54,17 @@ void PyjsObject::Init(v8::Local<v8::Object> exports) {
     exports->Set(Nan::New("PyObject").ToLocalChecked(), tpl->GetFunction());
 
     // make a function from a PyObject
-    static const char scriptString[] = "                                \
-        function makeFunction(object) {                                 \
-            var resultFunction = function () {                          \
-                return object.apply(arguments);                         \
-            };                                                          \
-            resultFunction.__proto__ = object;                          \
-            return resultFunction;                                      \
-        };                                                              \
-        makeFunction                                                    \
+    static const char scriptString[] = "                                            \
+        function makeFunction(object) {                                             \
+            var resultFunction = function () {                                      \
+                var args = [];                                                      \
+                for (var i = 0; i < arguments.length; i++) args.push(arguments[i]); \
+                return object.apply(args);                                          \
+            };                                                                      \
+        resultFunction.__proto__ = object;                                          \
+            return resultFunction;                                                  \
+        };                                                                          \
+        makeFunction                                                                \
     ";
     v8::Local<Nan::BoundScript> script = Nan::CompileScript(Nan::New(scriptString).ToLocalChecked()).ToLocalChecked();
     v8::Local<v8::Function> resultFunction = Nan::RunScript(script).ToLocalChecked().As<v8::Function>();
@@ -121,16 +123,25 @@ void PyjsObject::Attr(const Nan::FunctionCallbackInfo<v8::Value> &args) {
 
 void PyjsObject::Apply(const Nan::FunctionCallbackInfo<v8::Value> &args) {
     PyObject *pyFunc = UnWrap(args.This())->object;
-    if (!PyFunction_Check(pyFunc)) {
+    if (!PyCallable_Check(pyFunc)) {
         // throw
         return;
     }
     Nan::HandleScope scope;
     if (args[0]->IsArray()) {
         // arguments
-        PyObject *arguments = JsToPy(args[0]);
-        PyObject *pyResult = PyObject_CallObject(pyFunc, arguments);
-        args.GetReturnValue().Set(PyjsObject::NewInstance(pyResult));
+        v8::Local<v8::Array> jsArr = args[0].As<v8::Array>();
+        PyObject *pyTuple = PyTuple_New(jsArr->Length());
+        for (ssize_t i = 0; i < jsArr->Length(); i++) {
+            int result = PyTuple_SetItem(pyTuple, i, JsToPy(jsArr->Get(i)));
+            assert(result != -1);
+        }
+
+        PyObject *pyResult = PyObject_CallObject(pyFunc, pyTuple);
+        
+        args.GetReturnValue().Set(PyToJs(pyResult));
+        Py_XDECREF(pyResult);
+        Py_DECREF(pyTuple);
     }
 }
 

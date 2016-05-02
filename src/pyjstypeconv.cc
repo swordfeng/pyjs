@@ -31,7 +31,7 @@ v8::Local<v8::Value> PyToJs(PyObject *pyObject) {
             jsObject->Set(PyToJs(key), PyToJs(value));
         }
         return scope.Escape(jsObject);
-    } else if (PyFunction_Check(pyObject)) {
+    } else if (PyCallable_Check(pyObject)) {
         Py_INCREF(pyObject);
         v8::Local<v8::Object> jsObject = PyjsObject::NewInstance(pyObject);
 
