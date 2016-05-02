@@ -45,6 +45,7 @@ void Init(Local<Object> exports) {
     PyObject *sysPath = PySys_GetObject("path");
     PyObject *path = PyUnicode_FromString("");
     int result = PyList_Insert(sysPath, 0, path);
+    assert(result != -1);
     Py_DECREF(path);
 
     PyjsObject::Init(exports);

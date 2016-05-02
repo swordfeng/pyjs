@@ -6,12 +6,12 @@
 class PyjsObject : public Nan::ObjectWrap {
 public:
     static void Init(v8::Local<v8::Object> exports);
-    static v8::Local<v8::Object> NewInstance(PyObject *object);
+    static v8::Local<v8::Object> NewInstance(PyObject *object); // steal reference
     static bool IsInstance(v8::Local<v8::Object> object);
     PyjsObject();
     ~PyjsObject();
-    void SetObject(PyObject *object);
-    PyObject *GetObject();
+    void SetObject(PyObject *object); // steal reference
+    PyObject *GetObject(); // return new reference
 private:
     static void New(const Nan::FunctionCallbackInfo<v8::Value> &args);
 

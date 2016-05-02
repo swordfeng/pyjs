@@ -69,8 +69,10 @@ void PyjsObject::Attr(const Nan::FunctionCallbackInfo<v8::Value> &args) {
     Nan::HandleScope scope;
     PyObject *attr = JsToPy(args[0]);
     if (args.Length() == 1) {
-        if (PyObject_HasAttr(object, attr)) {
-            args.GetReturnValue().Set(PyjsObject::NewInstance(PyObject_GetAttr(object, attr)));
+        PyObject *subObject = PyObject_GetAttr(object, attr);
+        if (subObject) {
+            args.GetReturnValue().Set(PyToJs(subObject));
+            Py_DECREF(subObject);
         } else {
             args.GetReturnValue().Set(Nan::Undefined());
         }

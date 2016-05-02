@@ -1,5 +1,6 @@
 #include "pyjstypeconv.h"
 #include "pyjsobject.h"
+#include <cassert>
 #include <iostream>
 v8::Local<v8::Value> PyToJs(PyObject *pyObject) {
     Nan::EscapableHandleScope scope;
@@ -31,7 +32,8 @@ v8::Local<v8::Value> PyToJs(PyObject *pyObject) {
         }
         return scope.Escape(jsObject);
     }
-    return scope.Escape(Nan::Undefined());
+    Py_INCREF(pyObject);
+    return scope.Escape(PyjsObject::NewInstance(pyObject));
 }
 
 // return new reference
@@ -64,9 +66,10 @@ PyObject *JsToPy(v8::Local<v8::Value> jsValue) {
         PyObject *pyArr = PyList_New(jsArr->Length());
         for (ssize_t i = 0; i < jsArr->Length(); i++) {
             int result = PyList_SetItem(pyArr, i, JsToPy(jsArr->Get(i)));
+            assert(result != -1);
         }
         return pyArr;
-    } else if (jsValue->IsObject()) { // must be at last
+    } else if (jsValue->IsObject()) { // must be after null, function
         v8::Local<v8::Object> jsObject = jsValue->ToObject();
         PyObject *pyDict = PyDict_New();
         v8::Local<v8::Array> props = Nan::GetOwnPropertyNames(jsObject).ToLocalChecked();
@@ -76,10 +79,13 @@ PyObject *JsToPy(v8::Local<v8::Value> jsValue) {
             PyObject *pyKey = JsToPy(jsKey);
             PyObject *pyValue = JsToPy(jsValue);
             int result = PyDict_SetItem(pyDict, pyKey, pyValue);
+            assert(result != -1);
             Py_DECREF(pyKey);
             Py_DECREF(pyValue);
         }
         return pyDict;
+    } else if (jsValue->IsUndefined()) {
+        return nullptr;
     }
-    return nullptr;
+    assert(0); // should not reach here
 }
