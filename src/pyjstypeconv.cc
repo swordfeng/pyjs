@@ -31,6 +31,16 @@ v8::Local<v8::Value> PyToJs(PyObject *pyObject) {
             jsObject->Set(PyToJs(key), PyToJs(value));
         }
         return scope.Escape(jsObject);
+    } else if (PyFunction_Check(pyObject)) {
+        Py_INCREF(pyObject);
+        v8::Local<v8::Object> jsObject = PyjsObject::NewInstance(pyObject);
+
+        const int argc = 1;
+        v8::Local<v8::Value> argv[] = { jsObject };
+        v8::Local<v8::Function> makeFunction = Nan::New(PyjsObject::makeFunction);
+        v8::Local<v8::Function> result = makeFunction->Call(jsObject, argc, argv).As<v8::Function>();
+
+        return scope.Escape(result);
     }
     Py_INCREF(pyObject);
     return scope.Escape(PyjsObject::NewInstance(pyObject));
@@ -41,9 +51,10 @@ PyObject *JsToPy(v8::Local<v8::Value> jsValue) {
     Nan::HandleScope scope;
     if (jsValue->IsObject()) {
         v8::Local<v8::Object> jsObject = jsValue->ToObject();
-        if (PyjsObject::IsInstance(jsObject)) {
+        PyjsObject *object = PyjsObject::UnWrap(jsObject);
+        if (object) {
             // just unwrap and return
-            return Nan::ObjectWrap::Unwrap<PyjsObject>(jsObject)->GetObject();
+            return object->GetObject();
         }
     }
     if (jsValue->IsNull()) {
@@ -69,7 +80,9 @@ PyObject *JsToPy(v8::Local<v8::Value> jsValue) {
             assert(result != -1);
         }
         return pyArr;
-    } else if (jsValue->IsObject()) { // must be after null, function
+    } else if (jsValue->IsFunction()) {
+        assert(0);
+    } else if (jsValue->IsObject()) { // must be after null, array, function
         v8::Local<v8::Object> jsObject = jsValue->ToObject();
         PyObject *pyDict = PyDict_New();
         v8::Local<v8::Array> props = Nan::GetOwnPropertyNames(jsObject).ToLocalChecked();

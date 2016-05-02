@@ -47,7 +47,14 @@ describe('PyObject', function () {
             var pyobj = new PyObject(15);
             pyobj = new PyObject(15);
             assert.equal(15, pyobj.value());
-        })
+        });
+        it('function', function() {
+            var test = pyjs.import('test');
+            var func = test.attr('func');
+            assert('function', typeof func);
+            assert(true, func.__proto__ instanceof PyObject);
+            assert('hello', func());
+        });
     });
     describe('prototype', function () {
         it('a.__proto__.__proto__ === PyObject.prototype', function () {
