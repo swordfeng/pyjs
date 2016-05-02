@@ -3,7 +3,6 @@ var pyjs = require('../build/Release/pyjs-native.node');
 var assert = require('chai').assert;
 var jsesc = require('jsesc');
 var PyObject = pyjs.PyObject;
-var pyEval = pyjs.eval;
 
 describe('PyObject', function () {
     describe('type conversion', function () {

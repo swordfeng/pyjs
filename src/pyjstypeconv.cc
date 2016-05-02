@@ -49,7 +49,8 @@ PyObject *JsToPy(v8::Local<v8::Value> jsValue) {
         return Py_None;
     } else if (jsValue->IsString()) {
         v8::Local<v8::String> jsString = jsValue->ToString();
-        return PyUnicode_FromStringAndSize(*static_cast<v8::String::Utf8Value>(jsString), jsString->Utf8Length());
+        v8::String::Utf8Value utf8String(jsString);
+        return PyUnicode_FromStringAndSize(*utf8String, jsString->Utf8Length());
     } else if (jsValue->IsTrue()) {
         Py_INCREF(Py_True);
         return Py_True;

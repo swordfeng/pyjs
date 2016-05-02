@@ -26,13 +26,17 @@ void PyjsEval(const FunctionCallbackInfo<Value>& args) {
     args.GetReturnValue().Set(PyjsObject::NewInstance(object));
 }
 
-void PyValueOf(const FunctionCallbackInfo<Value> &args);
-
 void PyjsBuiltins(const FunctionCallbackInfo<Value> &args) {
     PyObject *builtins = PyEval_GetBuiltins();
     assert(builtins);
     Py_INCREF(builtins);
     args.GetReturnValue().Set(PyjsObject::NewInstance(builtins));
+}
+
+void PyjsImport(const Nan::FunctionCallbackInfo<v8::Value> &args) {
+    Local<String> name = args[0]->ToString();
+    PyObject *object = PyImport_ImportModule(*static_cast<String::Utf8Value>(name));
+    args.GetReturnValue().Set(PyjsObject::NewInstance(object));
 }
 
 void Init(Local<Object> exports) {
@@ -47,6 +51,7 @@ void Init(Local<Object> exports) {
 
     Nan::SetMethod(exports, "eval", PyjsEval);
     Nan::SetMethod(exports, "builtins", PyjsBuiltins);
+    Nan::SetMethod(exports, "import", PyjsImport);
 }
 
 NODE_MODULE(pyjs, Init)

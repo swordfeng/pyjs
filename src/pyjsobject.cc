@@ -33,6 +33,7 @@ void PyjsObject::Init(v8::Local<v8::Object> exports) {
     // Nan::SetMethod(prototpl, "print", Print);
     Nan::SetMethod(prototpl, "repr", Repr);
     Nan::SetMethod(prototpl, "value", Value);
+    Nan::SetMethod(prototpl, "attr", Attr);
 
     constructor.Reset(tpl->GetFunction());
     functpl.Reset(tpl);
@@ -60,6 +61,25 @@ void PyjsObject::Repr(const Nan::FunctionCallbackInfo<v8::Value> &args) {
     assert(wrapper->object);
     Nan::HandleScope scope;
     args.GetReturnValue().Set(NewInstance(PyObject_Repr(wrapper->object)));
+}
+
+void PyjsObject::Attr(const Nan::FunctionCallbackInfo<v8::Value> &args) {
+    PyObject *object = ObjectWrap::Unwrap<PyjsObject>(args.This())->object;
+    assert(object);
+    Nan::HandleScope scope;
+    PyObject *attr = JsToPy(args[0]);
+    if (args.Length() == 1) {
+        if (PyObject_HasAttr(object, attr)) {
+            args.GetReturnValue().Set(PyjsObject::NewInstance(PyObject_GetAttr(object, attr)));
+        } else {
+            args.GetReturnValue().Set(Nan::Undefined());
+        }
+    } else if (args.Length() == 2) {
+        PyObject *value = JsToPy(args[1]);
+        PyObject_SetAttr(object, attr, value);
+        Py_DECREF(value);
+    }
+    Py_DECREF(attr);
 }
 
 // steal one ref

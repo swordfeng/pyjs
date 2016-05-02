@@ -17,6 +17,7 @@ private:
 
     static void Repr(const Nan::FunctionCallbackInfo<v8::Value> &args);
     static void Value(const Nan::FunctionCallbackInfo<v8::Value> &args);
+    static void Attr(const Nan::FunctionCallbackInfo<v8::Value> &args);
 
     static Nan::Persistent<v8::FunctionTemplate> functpl;
     static Nan::Persistent<v8::Function> constructor;
