@@ -4,6 +4,7 @@ Under heavy development
 
 ### TODO
 + Use `SetNamedPropertyHandler` instead of set seperately for each PyObject
++ Use `SetCallAsFunctionHandler` instead of wrap it for each callable PyObject
 + RAII wrapper for Python objects
 + Error handling
 + Call JavaScript from Python side
