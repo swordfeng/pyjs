@@ -3,5 +3,7 @@ Pyjs - Call Python code from Node.js in process
 Under heavy development
 
 ### TODO
++ RAII wrapper for Python objects
 + Error handling
-+ RAII wrapper for python objects
++ Call JavaScript from Python side
++ Check Python functions' result for each time!
