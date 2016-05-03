@@ -43,6 +43,13 @@ describe('PyObject', function () {
             };
             assert.deepEqual(obj, new PyObject(obj).value());
         });
+        it('buffer <---> bytes', function () {
+            var bytes = new PyObject(Buffer('abcd', 'utf8'));
+            assert.equal('b\'abcd\'', bytes.toString());
+            var newBuf = bytes.value();
+            assert(newBuf instanceof Buffer);
+            assert.equal('abcd', newBuf.toString('utf8'));
+        });
         it('self wrap', function () {
             var pyobj = new PyObject(15);
             pyobj = new PyObject(15);

@@ -12,6 +12,12 @@ v8::Local<v8::Value> PyToJs(PyObject *pyObject) {
         Py_ssize_t size;
         char *str = PyUnicode_AsUTF8AndSize(pyObject, &size);
         return scope.Escape(Nan::New(str, size).ToLocalChecked());
+    } else if (PyBytes_CheckExact(pyObject)) {
+        char *buf;
+        Py_ssize_t size;
+        int result = PyBytes_AsStringAndSize(pyObject, &buf, &size);
+        assert(result != -1);
+        return scope.Escape(Nan::CopyBuffer(buf, size).ToLocalChecked());
     } else if (PyBool_Check(pyObject)) {
         return scope.Escape(Nan::New<v8::Boolean>(pyObject == Py_True));
     } else if (PyFloat_CheckExact(pyObject)) {
@@ -82,7 +88,9 @@ PyObject *JsToPy(v8::Local<v8::Value> jsValue) {
         return pyArr;
     } else if (jsValue->IsFunction()) {
         assert(0);
-    } else if (jsValue->IsObject()) { // must be after null, array, function
+    } else if (node::Buffer::HasInstance(jsValue)) { // compability?
+        return PyBytes_FromStringAndSize(node::Buffer::Data(jsValue), node::Buffer::Length(jsValue));
+    } else if (jsValue->IsObject()) { // must be after null, array, function, buffer
         v8::Local<v8::Object> jsObject = jsValue->ToObject();
         PyObject *pyDict = PyDict_New();
         v8::Local<v8::Array> props = Nan::GetOwnPropertyNames(jsObject).ToLocalChecked();
