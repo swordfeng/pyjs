@@ -9,31 +9,31 @@ var pyimport = pyjs.import;
 describe('PyObject', function () {
     describe('type conversion', function () {
         it('null <---> None', function () {
-            assert.equal('None', new PyObject(null).__repr__());
-            assert.equal(null, new PyObject(null).value());
+            assert.equal('None', new PyObject(null).$repr());
+            assert.equal(null, new PyObject(null).$value());
         });
         it('true <---> True', function () {
-            assert.equal('True', new PyObject(true).__repr__());
-            assert.equal(true, new PyObject(true).value());
+            assert.equal('True', new PyObject(true).$repr());
+            assert.equal(true, new PyObject(true).$value());
         });
         it('false <---> False', function () {
-            assert.equal('False', new PyObject(false).__repr__());
-            assert.equal(false, new PyObject(false).value());
+            assert.equal('False', new PyObject(false).$repr());
+            assert.equal(false, new PyObject(false).$value());
         });
         it('undefined <---> (nullptr)', function () {
-            assert.equal(undefined, new PyObject().value());
+            assert.equal(undefined, new PyObject().$value());
         });
         it('string <---> unicode', function () {
             var crypto = require('crypto');
             var str = crypto.randomBytes(1024).toString('utf8');
-            assert.equal(str, new PyObject(str).value());
+            assert.equal(str, new PyObject(str).$value());
         });
         it('number <---> double', function () {
-            assert.equal(15, new PyObject(15).value());
-            assert.equal('15.0', new PyObject(15).__repr__());
+            assert.equal(15, new PyObject(15).$value());
+            assert.equal('15.0', new PyObject(15).$repr());
         });
         it('array <---> list', function () {
-            var arr = new PyObject([1, 'aa', false]).value();
+            var arr = new PyObject([1, 'aa', false]).$value();
             assert.deepEqual([1, 'aa', false], arr);
         });
         it('normal object <---> dict', function () {
@@ -43,20 +43,22 @@ describe('PyObject', function () {
                 'x y': true,
                 'something': null
             };
-            assert.deepEqual(obj, new PyObject(obj).value());
+            assert.deepEqual(obj, new PyObject(obj).$value());
         });
         it('buffer <---> bytes', function () {
             var bytes = new PyObject(Buffer('abcd', 'utf8'));
             assert.equal('b\'abcd\'', bytes.toString());
-            var newBuf = bytes.value();
+            var newBuf = bytes.$value();
             assert(newBuf instanceof Buffer);
             assert.equal('abcd', newBuf.toString('utf8'));
         });
         it('self wrap', function () {
             var pyobj = new PyObject(15);
             pyobj = new PyObject(15);
-            assert.equal(15, pyobj.value());
+            assert.equal(15, pyobj.$value());
         });
+    });
+    describe('py function conversion', function () {
         it('function', function() {
             var test = pyjs.import('test');
             var func = test.attr('func');
@@ -76,7 +78,7 @@ describe('PyObject', function () {
             var a = PyObject('abc');
             function makeb() {}
             makeb.prototype = a;
-            assert(new makeb().value(), 'abc');
+            assert(new makeb().$value(), 'abc');
         });
     });
     describe('getter and setters', function () {

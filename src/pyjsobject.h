@@ -10,8 +10,6 @@ public:
     static bool IsInstance(v8::Local<v8::Object> object);
     static PyjsObject *UnWrap(v8::Local<v8::Object> object);
 
-    static Nan::Persistent<v8::Function> makeFunction;
-
     PyjsObject();
     ~PyjsObject();
     void SetObject(PyObject *object, v8::Local<v8::Object> instance); // steal reference
@@ -30,10 +28,10 @@ private:
     static void Call(const Nan::FunctionCallbackInfo<v8::Value> &args);
 
     static void AttrGetter(v8::Local<v8::String> name, const Nan::PropertyCallbackInfo<v8::Value> &info);
-    template <typename RetType>
-    static void AttrSetter(v8::Local<v8::String> name, v8::Local<v8::Value> value, const Nan::PropertyCallbackInfo<RetType> &info);
+    static void AttrSetter(v8::Local<v8::String> name, v8::Local<v8::Value> value, const Nan::PropertyCallbackInfo<v8::Value> &info);
 
     static Nan::Persistent<v8::FunctionTemplate> constructorTpl;
+    static Nan::Persistent<v8::ObjectTemplate> callableTpl;
 
     PyObject *object;
 };

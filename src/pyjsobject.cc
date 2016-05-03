@@ -4,7 +4,7 @@
 #include <cassert>
 
 Nan::Persistent<v8::FunctionTemplate> PyjsObject::constructorTpl;
-Nan::Persistent<v8::Function> PyjsObject::makeFunction;
+Nan::Persistent<v8::ObjectTemplate> PyjsObject::callableTpl;
 
 PyjsObject::PyjsObject(): object(nullptr) {}
 PyjsObject::~PyjsObject() { Py_XDECREF(object); }
@@ -13,28 +13,6 @@ PyjsObject::~PyjsObject() { Py_XDECREF(object); }
 void PyjsObject::SetObject(PyObject *object, v8::Local<v8::Object> instance) {
     Py_XDECREF(this->object);
     this->object = object;
-
-    Nan::HandleScope scope;
-
-    if (object) {
-        // add getter && setters to object ?
-        PyObject *attrNames = PyObject_Dir(object);
-        assert(attrNames);
-        assert(PyList_CheckExact(attrNames));
-        Py_ssize_t size = PyList_Size(attrNames);
-        for (ssize_t i = 0; i < size; i++) {
-            PyObject *item = PyList_GetItem(attrNames, i);
-            Py_ssize_t size;
-            const char *attrName = PyUnicode_AsUTF8AndSize(item, &size);
-            if (size >= 4 && attrName[0] == '_' && attrName[1] == '_' &&
-                attrName[size - 1] == '_' && attrName[size - 2] == '_') {
-                continue;
-            }
-            v8::Local<v8::String> jsName = Nan::New(attrName, size).ToLocalChecked();
-            Nan::SetAccessor(instance, jsName, AttrGetter, AttrSetter, v8::Local<v8::Value>(), v8::DEFAULT, v8::DontDelete);
-        }
-        Py_DECREF(attrNames);
-    }
 }
 
 // new reference
@@ -59,49 +37,39 @@ PyjsObject *PyjsObject::UnWrap(v8::Local<v8::Object> object) {
 
 void PyjsObject::Init(v8::Local<v8::Object> exports) {
     Nan::HandleScope scope;
-
-    // Prepate proxy object
-    /*
-    v8::Local<v8::ObjectTemplate> proxytpl = Nan::New<v8::ObjectTemplate>();
-    Nan::SetNamedPropertyHandler(proxytpl, AttrGetter, AttrSetter);
-    v8::Local<v8::Object> proxy = Nan::New<v8::Object>(proxytpl);
-    */
-
     // Prepare constructor template
     v8::Local<v8::FunctionTemplate> tpl = Nan::New<v8::FunctionTemplate>(New);
     tpl->SetClassName(Nan::New("PyObject").ToLocalChecked());
     tpl->InstanceTemplate()->SetInternalFieldCount(1);
     // Prototype
     v8::Local<v8::ObjectTemplate> prototpl = tpl->PrototypeTemplate();
-    // Nan::SetMethod(prototpl, "print", Print);
-    Nan::SetMethod(prototpl, "__repr__", Repr);
-    Nan::SetMethod(prototpl, "__str__", Str);
-    Nan::SetMethod(prototpl, "__call__", Call);
-    Nan::SetMethod(prototpl, "value", Value);
-    Nan::SetMethod(prototpl, "attr", Attr);
-    // $ is aliased to Attr
+    Nan::SetMethod(prototpl, "$repr", Repr);
+    Nan::SetMethod(prototpl, "$str", Str);
+    Nan::SetMethod(prototpl, "$call", Call);
+    Nan::SetMethod(prototpl, "$value", Value);
+    Nan::SetMethod(prototpl, "$attr", Attr);
     Nan::SetMethod(prototpl, "$", Attr);
-    // make toString an alias to str
-    Nan::SetMethod(prototpl, "toString", Str);
-    // make inspect an alias to repr
-    Nan::SetMethod(prototpl, "inspect", Repr);
 
+    Nan::SetMethod(prototpl, "toString", Str);
+    Nan::SetMethod(prototpl, "inspect", Repr);
     Nan::SetMethod(prototpl, "valueOf", ValueOf);
 
-    Nan::SetNamedPropertyHandler(prototpl, AttrGetter, AttrSetter);
+    Nan::SetNamedPropertyHandler(tpl->InstanceTemplate(), AttrGetter, AttrSetter);
+
+    //v8::Local<v8::ObjectTemplate> ctpl = Nan::New<v8::ObjectTemplate>();
 
     constructorTpl.Reset(tpl);
     exports->Set(Nan::New("PyObject").ToLocalChecked(), tpl->GetFunction());
-
+/*
     // make a function from a callable PyObject
     static const char scriptString[] = "                                            \
         function makeFunction(object) {                                             \
             var resultFunction = function () {                                      \
                 var args = [];                                                      \
                 for (var i = 0; i < arguments.length; i++) args.push(arguments[i]); \
-                return object.__call__(args);                                       \
+                return object.$call(args);                                          \
             };                                                                      \
-        resultFunction.__proto__ = object;                                          \
+            resultFunction.__proto__ = object;                                      \
             return resultFunction;                                                  \
         };                                                                          \
         makeFunction                                                                \
@@ -109,6 +77,7 @@ void PyjsObject::Init(v8::Local<v8::Object> exports) {
     v8::Local<Nan::BoundScript> script = Nan::CompileScript(Nan::New(scriptString).ToLocalChecked()).ToLocalChecked();
     v8::Local<v8::Function> resultFunction = Nan::RunScript(script).ToLocalChecked().As<v8::Function>();
     makeFunction.Reset(resultFunction);
+*/
 }
 
 void PyjsObject::New(const Nan::FunctionCallbackInfo<v8::Value> &args) {
@@ -184,28 +153,29 @@ void PyjsObject::Attr(const Nan::FunctionCallbackInfo<v8::Value> &args) {
 }
 
 void PyjsObject::AttrGetter(v8::Local<v8::String> name, const Nan::PropertyCallbackInfo<v8::Value> &info) {
-    std::cout << "getter: " << *v8::String::Utf8Value(name) << std::endl;
-    PyObject *object = UnWrap(info.This())->object;
-    Nan::HandleScope scope;
+    if (!name->IsString()) return;
+    PyjsObject *wrapper = UnWrap(info.This());
+    PyObject *object = wrapper->object;
+    if (!object) return;
     PyObject *attr = JsToPy(name);
+    if (!PyObject_HasAttr(object, attr)) { Py_DECREF(attr); return; }
     PyObject *subObject = PyObject_GetAttr(object, attr);
-    if (subObject) {
-        info.GetReturnValue().Set(PyToJs(subObject));
-        Py_DECREF(subObject);
-    } else {
-        info.GetReturnValue().Set(Nan::Undefined());
-    }
+    info.GetReturnValue().Set(PyToJs(subObject));
+    Py_DECREF(subObject);
     Py_DECREF(attr);
 }
 
-template <typename RetType>
 void PyjsObject::AttrSetter(v8::Local<v8::String> name, v8::Local<v8::Value> value,
-    const Nan::PropertyCallbackInfo<RetType> &info) {
-    PyObject *object = UnWrap(info.This())->object;
-    Nan::HandleScope scope;
+    const Nan::PropertyCallbackInfo<v8::Value> &info) {
+    if (!name->IsString()) return;
+    if (!IsInstance(info.This())) return;
+    PyjsObject *wrapper = UnWrap(info.This());
+    if (!wrapper) return;
+    PyObject *object = wrapper->object;
+    if (!object) return;
     PyObject *attr = JsToPy(name);
     PyObject *pyValue = JsToPy(value);
-    PyObject_SetAttr(object, attr, pyValue);
+    int result = PyObject_SetAttr(object, attr, pyValue);
     Py_DECREF(pyValue);
     Py_DECREF(attr);
 }
@@ -239,7 +209,7 @@ v8::Local<v8::Object> PyjsObject::NewInstance(PyObject *object) {
     Nan::EscapableHandleScope scope;
     v8::Local<v8::Function> cons = Nan::New<v8::FunctionTemplate>(constructorTpl)->GetFunction();
     v8::Local<v8::Object> instance = cons->NewInstance(0, {});
-    PyjsObject *wrapper = ObjectWrap::Unwrap<PyjsObject>(instance);
+    PyjsObject *wrapper = UnWrap(instance);
     wrapper->SetObject(object, instance);
     return scope.Escape(instance);
 }

@@ -38,6 +38,7 @@ v8::Local<v8::Value> PyToJs(PyObject *pyObject) {
         }
         return scope.Escape(jsObject);
     } else if (PyCallable_Check(pyObject)) {
+        /*
         Py_INCREF(pyObject);
         v8::Local<v8::Object> jsObject = PyjsObject::NewInstance(pyObject);
 
@@ -47,6 +48,8 @@ v8::Local<v8::Value> PyToJs(PyObject *pyObject) {
         v8::Local<v8::Function> result = makeFunction->Call(jsObject, argc, argv).As<v8::Function>();
 
         return scope.Escape(result);
+        */
+        return scope.Escape(Nan::Undefined());
     }
     Py_INCREF(pyObject);
     return scope.Escape(PyjsObject::NewInstance(pyObject));
