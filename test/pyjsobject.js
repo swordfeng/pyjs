@@ -93,4 +93,11 @@ describe('PyObject', function () {
             assert.deepEqual(a.$('__dict__'), { a: 4 });
         });
     });
+    describe('valueOf', function () {
+        it ('int', function () {
+            var a = builtins.int(32);
+            var b = builtins.float(10);
+            assert.equal(a + b, 42);
+        });
+    });
 });

@@ -79,6 +79,8 @@ void PyjsObject::Init(v8::Local<v8::Object> exports) {
     // make inspect an alias to repr
     Nan::SetMethod(prototpl, "inspect", Repr);
 
+    Nan::SetMethod(prototpl, "valueOf", ValueOf);
+
     constructorTpl.Reset(tpl);
     exports->Set(Nan::New("PyObject").ToLocalChecked(), tpl->GetFunction());
 
@@ -138,6 +140,18 @@ void PyjsObject::Str(const Nan::FunctionCallbackInfo<v8::Value> &args) {
     PyObject *repr = PyObject_Str(wrapper->object);
     args.GetReturnValue().Set(PyToJs(repr));
     Py_DECREF(repr);
+}
+
+void PyjsObject::ValueOf(const Nan::FunctionCallbackInfo<v8::Value> &args) {
+    PyObject *object = UnWrap(args.This())->object;
+    Nan::HandleScope scope;
+    if (PyLong_CheckExact(object)) {
+        double value = PyLong_AsDouble(object);
+        args.GetReturnValue().Set(Nan::New<v8::Number>(value));
+    } else {
+        v8::Local<v8::Value> instance = PyToJs(object);
+        args.GetReturnValue().Set(instance);
+    }
 }
 
 void PyjsObject::Attr(const Nan::FunctionCallbackInfo<v8::Value> &args) {

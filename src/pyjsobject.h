@@ -22,6 +22,8 @@ private:
     static void Repr(const Nan::FunctionCallbackInfo<v8::Value> &args);
     static void Str(const Nan::FunctionCallbackInfo<v8::Value> &args);
 
+    static void ValueOf(const Nan::FunctionCallbackInfo<v8::Value> &args);
+
     static void Value(const Nan::FunctionCallbackInfo<v8::Value> &args);
     static void Attr(const Nan::FunctionCallbackInfo<v8::Value> &args);
 
