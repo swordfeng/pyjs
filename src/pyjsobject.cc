@@ -50,6 +50,8 @@ void PyjsObject::Init(v8::Local<v8::Object> exports) {
     Nan::SetMethod(prototpl, "__call__", Call);
     Nan::SetMethod(prototpl, "value", Value);
     Nan::SetMethod(prototpl, "attr", Attr);
+    // $ is aliased to Attr
+    Nan::SetMethod(prototpl, "$", Attr);
     // make toString an alias to str
     Nan::SetMethod(prototpl, "toString", Str);
     // make inspect an alias to repr
