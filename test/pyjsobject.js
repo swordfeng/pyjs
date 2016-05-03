@@ -3,6 +3,8 @@ var pyjs = require('../build/Release/pyjs-native.node');
 var assert = require('chai').assert;
 var jsesc = require('jsesc');
 var PyObject = pyjs.PyObject;
+var builtins = pyjs.builtins();
+var pyimport = pyjs.import;
 
 describe('PyObject', function () {
     describe('type conversion', function () {
@@ -75,6 +77,21 @@ describe('PyObject', function () {
             function makeb() {}
             makeb.prototype = a;
             assert(new makeb().value(), 'abc');
+        });
+    });
+    describe('getter and setters', function () {
+        it('getter', function () {
+            var a = builtins.int(15);
+            assert.equal(a.bit_length(), 4);
+        });
+        it('setter', function () {
+            var testclass = pyimport('test').testclass;
+            var a = testclass();
+            console.log(a);
+            assert.equal(a.a, 2);
+            a.a = 4;
+            assert.equal(a.a, 4);
+            assert.deepEqual(a.$('__dict__'), { a: 4 });
         });
     });
 });

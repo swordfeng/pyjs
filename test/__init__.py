@@ -1,3 +1,5 @@
+from .testclass import *
+
 a = 5.0
 def func():
     return 'hello'
