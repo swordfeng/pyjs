@@ -60,6 +60,13 @@ PyjsObject *PyjsObject::UnWrap(v8::Local<v8::Object> object) {
 void PyjsObject::Init(v8::Local<v8::Object> exports) {
     Nan::HandleScope scope;
 
+    // Prepate proxy object
+    /*
+    v8::Local<v8::ObjectTemplate> proxytpl = Nan::New<v8::ObjectTemplate>();
+    Nan::SetNamedPropertyHandler(proxytpl, AttrGetter, AttrSetter);
+    v8::Local<v8::Object> proxy = Nan::New<v8::Object>(proxytpl);
+    */
+
     // Prepare constructor template
     v8::Local<v8::FunctionTemplate> tpl = Nan::New<v8::FunctionTemplate>(New);
     tpl->SetClassName(Nan::New("PyObject").ToLocalChecked());
@@ -80,6 +87,8 @@ void PyjsObject::Init(v8::Local<v8::Object> exports) {
     Nan::SetMethod(prototpl, "inspect", Repr);
 
     Nan::SetMethod(prototpl, "valueOf", ValueOf);
+
+    Nan::SetNamedPropertyHandler(prototpl, AttrGetter, AttrSetter);
 
     constructorTpl.Reset(tpl);
     exports->Set(Nan::New("PyObject").ToLocalChecked(), tpl->GetFunction());
@@ -175,6 +184,7 @@ void PyjsObject::Attr(const Nan::FunctionCallbackInfo<v8::Value> &args) {
 }
 
 void PyjsObject::AttrGetter(v8::Local<v8::String> name, const Nan::PropertyCallbackInfo<v8::Value> &info) {
+    std::cout << "getter: " << *v8::String::Utf8Value(name) << std::endl;
     PyObject *object = UnWrap(info.This())->object;
     Nan::HandleScope scope;
     PyObject *attr = JsToPy(name);
@@ -188,8 +198,9 @@ void PyjsObject::AttrGetter(v8::Local<v8::String> name, const Nan::PropertyCallb
     Py_DECREF(attr);
 }
 
+template <typename RetType>
 void PyjsObject::AttrSetter(v8::Local<v8::String> name, v8::Local<v8::Value> value,
-    const Nan::PropertyCallbackInfo<void> &info) {
+    const Nan::PropertyCallbackInfo<RetType> &info) {
     PyObject *object = UnWrap(info.This())->object;
     Nan::HandleScope scope;
     PyObject *attr = JsToPy(name);
