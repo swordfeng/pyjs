@@ -87,7 +87,6 @@ describe('PyObject', function () {
         it('setter', function () {
             var testclass = pyimport('test').testclass;
             var a = testclass();
-            console.log(a);
             assert.equal(a.a, 2);
             a.a = 4;
             assert.equal(a.a, 4);
