@@ -42,13 +42,11 @@ void PyjsImport(const Nan::FunctionCallbackInfo<v8::Value> &args) {
 void Init(Local<Object> exports) {
     // python initialize
     Py_Initialize();
-    /*
     PyObject *sysPath = PySys_GetObject("path");
     PyObject *path = PyUnicode_FromString("");
     int result = PyList_Insert(sysPath, 0, path);
     assert(result != -1);
     Py_DECREF(path);
-    */
     PyjsObject::Init(exports);
 
     Nan::SetMethod(exports, "eval", PyjsEval);
