@@ -10,9 +10,31 @@ PyjsObject::PyjsObject(): object(nullptr) {}
 PyjsObject::~PyjsObject() { Py_XDECREF(object); }
 
 // steal one ref
-void PyjsObject::SetObject(PyObject *object) {
+void PyjsObject::SetObject(PyObject *object, v8::Local<v8::Object> instance) {
     Py_XDECREF(this->object);
     this->object = object;
+
+    Nan::HandleScope scope;
+
+    if (object) {
+        // add getter && setters to object ?
+        PyObject *attrNames = PyObject_Dir(object);
+        assert(attrNames);
+        assert(PyList_CheckExact(attrNames));
+        Py_ssize_t size = PyList_Size(attrNames);
+        for (ssize_t i = 0; i < size; i++) {
+            PyObject *item = PyList_GetItem(attrNames, i);
+            Py_ssize_t size;
+            const char *attrName = PyUnicode_AsUTF8AndSize(item, &size);
+            if (size >= 4 && attrName[0] == '_' && attrName[1] == '_' &&
+                attrName[size - 1] == '_' && attrName[size - 2] == '_') {
+                continue;
+            }
+            v8::Local<v8::String> jsName = Nan::New(attrName, size).ToLocalChecked();
+            Nan::SetAccessor(instance, jsName, AttrGetter, AttrSetter);
+        }
+        Py_DECREF(attrNames);
+    }
 }
 
 // new reference
@@ -90,7 +112,7 @@ void PyjsObject::New(const Nan::FunctionCallbackInfo<v8::Value> &args) {
     PyjsObject *wrapper = new PyjsObject();
     wrapper->Wrap(thisObject);
     if (args.Length() == 1) { // make a value
-        wrapper->SetObject(JsToPy(args[0]));
+        wrapper->SetObject(JsToPy(args[0]), thisObject);
     }
     args.GetReturnValue().Set(thisObject);
 }
@@ -193,25 +215,7 @@ v8::Local<v8::Object> PyjsObject::NewInstance(PyObject *object) {
     v8::Local<v8::Function> cons = Nan::New<v8::FunctionTemplate>(constructorTpl)->GetFunction();
     v8::Local<v8::Object> instance = cons->NewInstance(0, {});
     PyjsObject *wrapper = ObjectWrap::Unwrap<PyjsObject>(instance);
-    wrapper->SetObject(object);
-    // add getter && setters to object ?
-    PyObject *attrNames = PyObject_Dir(object);
-    assert(attrNames);
-
-    Py_ssize_t size = PyList_Size(attrNames);
-    for (ssize_t i = 0; i < size; i++) {
-        PyObject *item = PyList_GetItem(attrNames, i);
-        Py_ssize_t size;
-        const char *attrName = PyUnicode_AsUTF8AndSize(item, &size);
-        if (size >= 4 && attrName[0] == '_' && attrName[1] == '_' &&
-            attrName[size - 1] == '_' && attrName[size - 2] == '_') {
-            continue;
-        }
-        v8::Local<v8::String> jsName = Nan::New(attrName, size).ToLocalChecked();
-        Nan::SetAccessor(instance, jsName, AttrGetter, AttrSetter);
-    }
-
-    Py_DECREF(attrNames);
+    wrapper->SetObject(object, instance);
     return scope.Escape(instance);
 }
 

@@ -14,7 +14,7 @@ public:
 
     PyjsObject();
     ~PyjsObject();
-    void SetObject(PyObject *object); // steal reference
+    void SetObject(PyObject *object, v8::Local<v8::Object> instance); // steal reference
     PyObject *GetObject(); // return new reference
 private:
     static void New(const Nan::FunctionCallbackInfo<v8::Value> &args);
