@@ -100,5 +100,5 @@ PyObject *JsToPy(v8::Local<v8::Value> jsValue) {
     } else if (jsValue->IsUndefined()) {
         return nullptr;
     }
-    assert(0); // should not reach here
+    assert(0); // todo: not implemented
 }
