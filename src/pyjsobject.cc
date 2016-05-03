@@ -31,7 +31,7 @@ void PyjsObject::SetObject(PyObject *object, v8::Local<v8::Object> instance) {
                 continue;
             }
             v8::Local<v8::String> jsName = Nan::New(attrName, size).ToLocalChecked();
-            Nan::SetAccessor(instance, jsName, AttrGetter, AttrSetter);
+            Nan::SetAccessor(instance, jsName, AttrGetter, AttrSetter, v8::Local<v8::Value>(), v8::DEFAULT, v8::DontDelete);
         }
         Py_DECREF(attrNames);
     }
