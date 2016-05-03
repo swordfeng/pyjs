@@ -5,6 +5,7 @@
 #include <cassert>
 
 #include "pyjsobject.h"
+#include "pyjstypeconv.h"
 
 using namespace Nan;
 using v8::Value;
@@ -29,8 +30,7 @@ void PyjsEval(const FunctionCallbackInfo<Value>& args) {
 void PyjsBuiltins(const FunctionCallbackInfo<Value> &args) {
     PyObject *builtins = PyEval_GetBuiltins();
     assert(builtins);
-    Py_INCREF(builtins);
-    args.GetReturnValue().Set(PyjsObject::NewInstance(builtins));
+    args.GetReturnValue().Set(PyToJs(builtins));
 }
 
 void PyjsImport(const Nan::FunctionCallbackInfo<v8::Value> &args) {
