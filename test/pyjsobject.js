@@ -7,15 +7,15 @@ var PyObject = pyjs.PyObject;
 describe('PyObject', function () {
     describe('type conversion', function () {
         it('null <---> None', function () {
-            assert.equal('None', new PyObject(null).repr().value());
+            assert.equal('None', new PyObject(null).__repr__());
             assert.equal(null, new PyObject(null).value());
         });
         it('true <---> True', function () {
-            assert.equal('True', new PyObject(true).repr().value());
+            assert.equal('True', new PyObject(true).__repr__());
             assert.equal(true, new PyObject(true).value());
         });
         it('false <---> False', function () {
-            assert.equal('False', new PyObject(false).repr().value());
+            assert.equal('False', new PyObject(false).__repr__());
             assert.equal(false, new PyObject(false).value());
         });
         it('undefined <---> (nullptr)', function () {
@@ -28,7 +28,7 @@ describe('PyObject', function () {
         });
         it('number <---> double', function () {
             assert.equal(15, new PyObject(15).value());
-            assert.equal('15.0', new PyObject(15).repr().value());
+            assert.equal('15.0', new PyObject(15).__repr__());
         });
         it('array <---> list', function () {
             var arr = new PyObject([1, 'aa', false]).value();
@@ -58,7 +58,7 @@ describe('PyObject', function () {
         it('function2', function() {
             var test = pyjs.import('test');
             var func2 = test.attr('func2');
-            assert.equal(5, func2.apply([2]));
+            assert.equal(5, func2.__call__([2]));
             assert.equal(5, func2(2));
         });
     });

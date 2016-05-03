@@ -45,21 +45,26 @@ void PyjsObject::Init(v8::Local<v8::Object> exports) {
     // Prototype
     v8::Local<v8::ObjectTemplate> prototpl = tpl->PrototypeTemplate();
     // Nan::SetMethod(prototpl, "print", Print);
-    Nan::SetMethod(prototpl, "repr", Repr);
+    Nan::SetMethod(prototpl, "__repr__", Repr);
+    Nan::SetMethod(prototpl, "__str__", Str);
+    Nan::SetMethod(prototpl, "__call__", Call);
     Nan::SetMethod(prototpl, "value", Value);
     Nan::SetMethod(prototpl, "attr", Attr);
-    Nan::SetMethod(prototpl, "apply", Apply);
+    // make toString an alias to str
+    Nan::SetMethod(prototpl, "toString", Str);
+    // make inspect an alias to repr
+    Nan::SetMethod(prototpl, "inspect", Repr);
 
     constructorTpl.Reset(tpl);
     exports->Set(Nan::New("PyObject").ToLocalChecked(), tpl->GetFunction());
 
-    // make a function from a PyObject
+    // make a function from a callable PyObject
     static const char scriptString[] = "                                            \
         function makeFunction(object) {                                             \
             var resultFunction = function () {                                      \
                 var args = [];                                                      \
                 for (var i = 0; i < arguments.length; i++) args.push(arguments[i]); \
-                return object.apply(args);                                          \
+                return object.__call__(args);                                       \
             };                                                                      \
         resultFunction.__proto__ = object;                                          \
             return resultFunction;                                                  \
@@ -98,7 +103,17 @@ void PyjsObject::Value(const Nan::FunctionCallbackInfo<v8::Value> &args) {
 void PyjsObject::Repr(const Nan::FunctionCallbackInfo<v8::Value> &args) {
     PyjsObject *wrapper = UnWrap(args.This());
     Nan::HandleScope scope;
-    args.GetReturnValue().Set(NewInstance(PyObject_Repr(wrapper->object)));
+    PyObject *repr = PyObject_Repr(wrapper->object);
+    args.GetReturnValue().Set(PyToJs(repr));
+    Py_DECREF(repr);
+}
+
+void PyjsObject::Str(const Nan::FunctionCallbackInfo<v8::Value> &args) {
+    PyjsObject *wrapper = UnWrap(args.This());
+    Nan::HandleScope scope;
+    PyObject *repr = PyObject_Str(wrapper->object);
+    args.GetReturnValue().Set(PyToJs(repr));
+    Py_DECREF(repr);
 }
 
 void PyjsObject::Attr(const Nan::FunctionCallbackInfo<v8::Value> &args) {
@@ -121,7 +136,7 @@ void PyjsObject::Attr(const Nan::FunctionCallbackInfo<v8::Value> &args) {
     Py_DECREF(attr);
 }
 
-void PyjsObject::Apply(const Nan::FunctionCallbackInfo<v8::Value> &args) {
+void PyjsObject::Call(const Nan::FunctionCallbackInfo<v8::Value> &args) {
     PyObject *pyFunc = UnWrap(args.This())->object;
     if (!PyCallable_Check(pyFunc)) {
         // throw
@@ -138,7 +153,7 @@ void PyjsObject::Apply(const Nan::FunctionCallbackInfo<v8::Value> &args) {
         }
 
         PyObject *pyResult = PyObject_CallObject(pyFunc, pyTuple);
-        
+
         args.GetReturnValue().Set(PyToJs(pyResult));
         Py_XDECREF(pyResult);
         Py_DECREF(pyTuple);

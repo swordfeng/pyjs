@@ -20,9 +20,12 @@ private:
     static void New(const Nan::FunctionCallbackInfo<v8::Value> &args);
 
     static void Repr(const Nan::FunctionCallbackInfo<v8::Value> &args);
+    static void Str(const Nan::FunctionCallbackInfo<v8::Value> &args);
+
     static void Value(const Nan::FunctionCallbackInfo<v8::Value> &args);
     static void Attr(const Nan::FunctionCallbackInfo<v8::Value> &args);
-    static void Apply(const Nan::FunctionCallbackInfo<v8::Value> &args);
+
+    static void Call(const Nan::FunctionCallbackInfo<v8::Value> &args);
 
     static Nan::Persistent<v8::FunctionTemplate> constructorTpl;
 
