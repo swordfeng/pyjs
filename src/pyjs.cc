@@ -10,6 +10,7 @@
 #include "pyjstypeconv.h"
 #include "python-util.h"
 #include "error.h"
+#include "py-gil-lock.h"
 
 
 class AtExit {
@@ -63,6 +64,8 @@ void Init(v8::Local<v8::Object> exports) {
     // not working?
     //node::AtExit([] (void *) { Py_Finalize(); std::cout << "exit" << std::endl; });
     static AtExit exitHandler(Py_Finalize);
+
+    GILLock::Init();
 
     JsPyWrapper::Init(exports);
 
