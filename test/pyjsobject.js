@@ -6,6 +6,10 @@ var PyObject = pyjs.PyObject;
 var builtins = pyjs.builtins;
 var pyimport = pyjs.import;
 
+pyjs.implicitConversion = false;
+pyjs.import('sys').path.insert(pyjs.builtins.int(0), __dirname + '/../');
+pyjs.implicitConversion = true;
+
 describe('PyObject', function () {
     describe('type conversion', function () {
         it('null <---> None', function () {

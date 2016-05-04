@@ -8,15 +8,20 @@
 // Neither the name of the Node-Python binding nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+// Origin from https://github.com/JeanSebTr/node-python/blob/master/test/index.js
 
 var python = require('../');
 require('chai').should();
 var expect = require('chai').expect;
 
+python.implicitConversion = false;
+python.import('sys').path.insert(python.builtins.int(0), __dirname + '/../');
+python.implicitConversion = true;
+
 describe('node-python', function () {
   describe('eval', function () {
     it('should return resulting value from python statement executed', function () {
-      var value = python.builtins.eval('"1"');
+      var value = python.eval('"1"');
       value.should.equal("1");
     });
     it('should return resulting value from python statement executed, converting to string with complex types', function () {
