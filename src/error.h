@@ -30,8 +30,9 @@ static inline v8::Local<v8::Value> makeJsErrorObject() {
 
     // python stack
     std::vector<std::string> frames;
-    PyTracebackObject *tb = reinterpret_cast<PyTracebackObject *>(traceback.borrow());
+    PyTracebackObject *last = nullptr, *tb = reinterpret_cast<PyTracebackObject *>(traceback.borrow());
     while (tb != nullptr) {
+        last = tb;
         std::ostringstream frameStringStream;
         frameStringStream << PyUnicode_AsUTF8(tb->tb_frame->f_code->co_name)
                 << " (" << PyUnicode_AsUTF8(tb->tb_frame->f_code->co_filename)
@@ -39,9 +40,24 @@ static inline v8::Local<v8::Value> makeJsErrorObject() {
         frames.push_back(frameStringStream.str());
         tb = tb->tb_next;
     }
+
+    if (last) {
+        // print line
+        PyObjectWithRef linecache(PyImport_ImportModule("linecache"));
+        PyObjectWithRef getline(PyObject_GetAttrString(linecache, "getline"));
+        PyObjectWithRef args(PyTuple_New(2));
+        PyTuple_SetItem(args, 0, PyObjectMakeRef(last->tb_frame->f_code->co_filename).escape());
+        PyTuple_SetItem(args, 1, PyLong_FromLong(last->tb_lineno));
+        PyObjectWithRef line(PyObject_CallObject(getline, args));
+        const char *lineCString = PyUnicode_AsUTF8(line);
+        if (*lineCString != 0) stackStream << "      " << lineCString << std::endl;
+    }
+
     for (auto it = frames.rbegin(); it != frames.rend(); it++) {
         stackStream << "    at " << *it << std::endl;
     }
+
+    stackStream << "  ---- FFI Boundary ----" << std::endl;
 
     // js stack
     Nan::EscapableHandleScope scope;

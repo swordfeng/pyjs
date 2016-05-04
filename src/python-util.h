@@ -18,11 +18,13 @@ public:
         Py_XDECREF(_object);
         _object = objWithRef._object;
         Py_XINCREF(_object);
+        return *this;
     }
     PyObjectWithRef &operator=(PyObjectWithRef &&objWithRef) {
         Py_XDECREF(_object);
         _object = objWithRef._object;
         objWithRef._object = nullptr;
+        return *this;
     }
     operator PyObjectBorrowed() { // borrow
         return _object;
