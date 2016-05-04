@@ -3,5 +3,5 @@
 #include <nan.h>
 #include <Python.h>
 #include "python-util.h"
-v8::Local<v8::Value> PyToJs(PyObjectBorrowed pyObject);
-PyObjectWithRef JsToPy(v8::Local<v8::Value> jsValue); // new reference
+v8::Local<v8::Value> PyToJs(PyObjectBorrowed pyObject, bool implicit = true);
+PyObjectWithRef JsToPy(v8::Local<v8::Value> jsValue);

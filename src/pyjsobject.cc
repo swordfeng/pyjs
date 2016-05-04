@@ -2,49 +2,49 @@
 #include "pyjstypeconv.h"
 #include <iostream>
 #include <cassert>
-#include <frameobject.h>
 #include "error.h"
 
-Nan::Persistent<v8::FunctionTemplate> PyjsObject::constructorTpl;
-Nan::Persistent<v8::ObjectTemplate> PyjsObject::callableTpl;
+Nan::Persistent<v8::FunctionTemplate> JsPyWrapper::constructorTpl;
+Nan::Persistent<v8::ObjectTemplate> JsPyWrapper::callableTpl;
 
-void PyjsObject::SetObject(PyObjectWithRef object, v8::Local<v8::Object> instance) {
+bool JsPyWrapper::implicitConversionEnabled = true;
+
+void JsPyWrapper::SetObject(PyObjectWithRef object, v8::Local<v8::Object> instance) {
     this->object = std::move(object);
 }
 
-PyObjectWithRef PyjsObject::GetObject() {
+PyObjectWithRef JsPyWrapper::GetObject() {
     return object;
 }
 
-PyjsObject *PyjsObject::UnWrap(v8::Local<v8::Object> object) {
+JsPyWrapper *JsPyWrapper::UnWrap(v8::Local<v8::Object> object) {
     Nan::HandleScope scope;
     // find real `this`
     while (!IsInstance(object)) {
         v8::Local<v8::Value> prototypeValue = object->GetPrototype();
         if (prototypeValue->IsNull()) {
-            // throw
-            return nullptr;
+            return nullptr; // error
         }
         object = prototypeValue->ToObject();
     }
-    return ObjectWrap::Unwrap<PyjsObject>(object);
+    return ObjectWrap::Unwrap<JsPyWrapper>(object);
 }
 
-v8::Local<v8::Object> PyjsObject::NewInstance(PyObjectWithRef object) {
+v8::Local<v8::Object> JsPyWrapper::NewInstance(PyObjectWithRef object) {
     Nan::EscapableHandleScope scope;
     v8::Local<v8::Function> cons = Nan::New<v8::FunctionTemplate>(constructorTpl)->GetFunction();
     v8::Local<v8::Object> instance = cons->NewInstance(0, {});
-    PyjsObject *wrapper = UnWrap(instance);
+    JsPyWrapper *wrapper = UnWrap(instance);
     wrapper->SetObject(object, instance);
     return scope.Escape(instance);
 }
 
-bool PyjsObject::IsInstance(v8::Local<v8::Object> object) {
+bool JsPyWrapper::IsInstance(v8::Local<v8::Object> object) {
     Nan::HandleScope scope;
     return Nan::New(constructorTpl)->HasInstance(object);
 }
 
-v8::Local<v8::Object> PyjsObject::makeFunction(v8::Local<v8::Object> instance) {
+v8::Local<v8::Object> JsPyWrapper::makeFunction(v8::Local<v8::Object> instance) {
     Nan::EscapableHandleScope scope;
     v8::Local<v8::ObjectTemplate> ctpl = Nan::New(callableTpl);
     v8::Local<v8::Object> callable = ctpl->NewInstance();
@@ -52,7 +52,7 @@ v8::Local<v8::Object> PyjsObject::makeFunction(v8::Local<v8::Object> instance) {
     return scope.Escape(callable);
 }
 
-void PyjsObject::Init(v8::Local<v8::Object> exports) {
+void JsPyWrapper::Init(v8::Local<v8::Object> exports) {
     Nan::HandleScope scope;
     // Prepare constructor template
     v8::Local<v8::FunctionTemplate> tpl = Nan::New<v8::FunctionTemplate>(New);
@@ -80,9 +80,17 @@ void PyjsObject::Init(v8::Local<v8::Object> exports) {
     Nan::SetNamedPropertyHandler(ctpl, AttrGetter, AttrSetter, 0, 0, AttrEnumerator);
     Nan::SetCallAsFunctionHandler(ctpl, CallFunction);
     callableTpl.Reset(ctpl);
+
+    Nan::SetAccessor(exports, Nan::New("implicitConversion").ToLocalChecked(),
+        [] (v8::Local<v8::String>, const Nan::PropertyCallbackInfo<v8::Value> &args) {
+            args.GetReturnValue().Set(Nan::New(implicitConversionEnabled));
+        }, [] (v8::Local<v8::String>, v8::Local<v8::Value> value, const Nan::PropertyCallbackInfo<void> &args) {
+            implicitConversionEnabled = value->BooleanValue();
+        }
+    );
 }
 
-void PyjsObject::New(const Nan::FunctionCallbackInfo<v8::Value> &args) {
+void JsPyWrapper::New(const Nan::FunctionCallbackInfo<v8::Value> &args) {
     Nan::HandleScope scope;
     v8::Local<v8::Object> thisObject;
     if (!args.IsConstructCall()) {
@@ -91,33 +99,35 @@ void PyjsObject::New(const Nan::FunctionCallbackInfo<v8::Value> &args) {
     } else {
         thisObject = args.This();
     }
-    PyjsObject *wrapper = new PyjsObject();
+    JsPyWrapper *wrapper = new JsPyWrapper();
     wrapper->Wrap(thisObject);
-    if (args.Length() == 1) {
+    if (args.Length() >= 1) {
         wrapper->SetObject(JsToPy(args[0]), thisObject);
+    } else {
+        wrapper->SetObject(JsToPy(Nan::Undefined()), thisObject);
     }
     args.GetReturnValue().Set(thisObject);
     CHECK_PYTHON_ERROR;
 }
 
-void PyjsObject::Value(const Nan::FunctionCallbackInfo<v8::Value> &args) {
-    PyjsObject *wrapper = UnWrap(args.This());
+void JsPyWrapper::Value(const Nan::FunctionCallbackInfo<v8::Value> &args) {
+    JsPyWrapper *wrapper = UnWrap(args.This());
     if (!wrapper || !wrapper->object) return;
 
     args.GetReturnValue().Set(PyToJs(wrapper->object));
     CHECK_PYTHON_ERROR;
 }
 
-void PyjsObject::Repr(const Nan::FunctionCallbackInfo<v8::Value> &args) {
-    PyjsObject *wrapper = UnWrap(args.This());
+void JsPyWrapper::Repr(const Nan::FunctionCallbackInfo<v8::Value> &args) {
+    JsPyWrapper *wrapper = UnWrap(args.This());
     if (!wrapper || !wrapper->object) return;
 
     args.GetReturnValue().Set(PyToJs(PyObjectWithRef(PyObject_Repr(wrapper->object))));
     CHECK_PYTHON_ERROR;
 }
 
-void PyjsObject::Str(const Nan::FunctionCallbackInfo<v8::Value> &args) {
-    PyjsObject *wrapper = UnWrap(args.This());
+void JsPyWrapper::Str(const Nan::FunctionCallbackInfo<v8::Value> &args) {
+    JsPyWrapper *wrapper = UnWrap(args.This());
     if (!wrapper || !wrapper->object) return;
 
     PyObjectWithRef object = PyObjectMakeRef(wrapper->object);
@@ -126,8 +136,8 @@ void PyjsObject::Str(const Nan::FunctionCallbackInfo<v8::Value> &args) {
     CHECK_PYTHON_ERROR;
 }
 
-void PyjsObject::ValueOf(const Nan::FunctionCallbackInfo<v8::Value> &args) {
-    PyjsObject *wrapper = UnWrap(args.This());
+void JsPyWrapper::ValueOf(const Nan::FunctionCallbackInfo<v8::Value> &args) {
+    JsPyWrapper *wrapper = UnWrap(args.This());
     if (!wrapper || !wrapper->object) return;
 
     PyObjectBorrowed object = wrapper->object;
@@ -139,8 +149,8 @@ void PyjsObject::ValueOf(const Nan::FunctionCallbackInfo<v8::Value> &args) {
     CHECK_PYTHON_ERROR;
 }
 
-void PyjsObject::Attr(const Nan::FunctionCallbackInfo<v8::Value> &args) {
-    PyjsObject *wrapper = UnWrap(args.This());
+void JsPyWrapper::Attr(const Nan::FunctionCallbackInfo<v8::Value> &args) {
+    JsPyWrapper *wrapper = UnWrap(args.This());
     if (!wrapper || !wrapper->object) return;
 
     PyObjectBorrowed object = wrapper->object;
@@ -150,7 +160,7 @@ void PyjsObject::Attr(const Nan::FunctionCallbackInfo<v8::Value> &args) {
     if (args.Length() == 1) {
         PyObjectWithRef subObject(PyObject_GetAttr(object, attr));
         if (subObject) {
-            args.GetReturnValue().Set(PyToJs(subObject));
+            args.GetReturnValue().Set(PyToJs(subObject, implicitConversionEnabled));
         } else {
             args.GetReturnValue().Set(Nan::Undefined());
         }
@@ -160,8 +170,8 @@ void PyjsObject::Attr(const Nan::FunctionCallbackInfo<v8::Value> &args) {
     CHECK_PYTHON_ERROR;
 }
 
-void PyjsObject::AttrGetter(v8::Local<v8::String> name, const Nan::PropertyCallbackInfo<v8::Value> &info) {
-    PyjsObject *wrapper = UnWrap(info.This());
+void JsPyWrapper::AttrGetter(v8::Local<v8::String> name, const Nan::PropertyCallbackInfo<v8::Value> &info) {
+    JsPyWrapper *wrapper = UnWrap(info.This());
     if (!wrapper || !wrapper->object) return;
 
     if (!name->IsString()) return;
@@ -169,13 +179,13 @@ void PyjsObject::AttrGetter(v8::Local<v8::String> name, const Nan::PropertyCallb
     PyObjectWithRef attr = JsToPy(name);
     if (!PyObject_HasAttr(object, attr)) return;
     PyObjectWithRef subObject(PyObject_GetAttr(object, attr));
-    info.GetReturnValue().Set(PyToJs(subObject));
+    info.GetReturnValue().Set(PyToJs(subObject, implicitConversionEnabled));
     CHECK_PYTHON_ERROR;
 }
 
-void PyjsObject::AttrSetter(v8::Local<v8::String> name, v8::Local<v8::Value> value,
+void JsPyWrapper::AttrSetter(v8::Local<v8::String> name, v8::Local<v8::Value> value,
     const Nan::PropertyCallbackInfo<v8::Value> &info) {
-    PyjsObject *wrapper = UnWrap(info.This());
+    JsPyWrapper *wrapper = UnWrap(info.This());
     if (!wrapper || !wrapper->object) return;
 
     if (!name->IsString()) return;
@@ -185,8 +195,8 @@ void PyjsObject::AttrSetter(v8::Local<v8::String> name, v8::Local<v8::Value> val
     CHECK_PYTHON_ERROR;
 }
 
-void PyjsObject::AttrEnumerator(const Nan::PropertyCallbackInfo<v8::Array> &info) {
-    PyjsObject *wrapper = UnWrap(info.This());
+void JsPyWrapper::AttrEnumerator(const Nan::PropertyCallbackInfo<v8::Array> &info) {
+    JsPyWrapper *wrapper = UnWrap(info.This());
     if (!wrapper || !wrapper->object) return;
 
     if (!IsInstance(info.This())) return;
@@ -196,8 +206,8 @@ void PyjsObject::AttrEnumerator(const Nan::PropertyCallbackInfo<v8::Array> &info
     CHECK_PYTHON_ERROR;
 }
 
-void PyjsObject::Call(const Nan::FunctionCallbackInfo<v8::Value> &args) {
-    PyjsObject *wrapper = UnWrap(args.This());
+void JsPyWrapper::Call(const Nan::FunctionCallbackInfo<v8::Value> &args) {
+    JsPyWrapper *wrapper = UnWrap(args.This());
     if (!wrapper || !wrapper->object) return;
 
     PyObjectBorrowed pyFunc = wrapper->object;
@@ -213,13 +223,13 @@ void PyjsObject::Call(const Nan::FunctionCallbackInfo<v8::Value> &args) {
         for (ssize_t i = 0; i < jsArr->Length(); i++) {
             int result = PyTuple_SetItem(pyTuple, i, JsToPy(jsArr->Get(i)).escape());
         }
-        args.GetReturnValue().Set(PyToJs(PyObjectWithRef(PyObject_CallObject(pyFunc, pyTuple))));
+        args.GetReturnValue().Set(PyToJs(PyObjectWithRef(PyObject_CallObject(pyFunc, pyTuple)), implicitConversionEnabled));
     }
     CHECK_PYTHON_ERROR;
 }
 
-void PyjsObject::CallFunction(const Nan::FunctionCallbackInfo<v8::Value> &args) {
-    PyjsObject *wrapper = UnWrap(args.This());
+void JsPyWrapper::CallFunction(const Nan::FunctionCallbackInfo<v8::Value> &args) {
+    JsPyWrapper *wrapper = UnWrap(args.This());
     if (!wrapper || !wrapper->object) return;
 
     PyObjectBorrowed pyFunc = wrapper->object;
@@ -233,6 +243,6 @@ void PyjsObject::CallFunction(const Nan::FunctionCallbackInfo<v8::Value> &args) 
         int result = PyTuple_SetItem(pyTuple, i, JsToPy(args[i]).escape());
         assert(result != -1);
     }
-    args.GetReturnValue().Set(PyToJs(PyObjectWithRef(PyObject_CallObject(pyFunc, pyTuple))));
+    args.GetReturnValue().Set(PyToJs(PyObjectWithRef(PyObject_CallObject(pyFunc, pyTuple)), implicitConversionEnabled));
     CHECK_PYTHON_ERROR;
 }

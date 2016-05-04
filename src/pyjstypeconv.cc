@@ -3,53 +3,58 @@
 #include "python-util.h"
 #include <cassert>
 #include <iostream>
-v8::Local<v8::Value> PyToJs(PyObjectBorrowed pyObject) {
+
+v8::Local<v8::Value> PyToJs(PyObjectBorrowed pyObject, bool implicit) {
     Nan::EscapableHandleScope scope;
     if (pyObject == nullptr) {
         return scope.Escape(Nan::Undefined());
-    } else if (pyObject == Py_None) {
-        return scope.Escape(Nan::Null());
-    } else if (PyUnicode_CheckExact(pyObject)) {
-        Py_ssize_t size;
-        char *str = PyUnicode_AsUTF8AndSize(pyObject, &size);
-        return scope.Escape(Nan::New(str, size).ToLocalChecked());
-    } else if (PyBytes_CheckExact(pyObject)) {
-        char *buf;
-        Py_ssize_t size;
-        int result = PyBytes_AsStringAndSize(pyObject, &buf, &size);
-        assert(result != -1);
-        return scope.Escape(Nan::CopyBuffer(buf, size).ToLocalChecked());
-    } else if (PyBool_Check(pyObject)) {
-        return scope.Escape(Nan::New<v8::Boolean>(pyObject == Py_True));
-    } else if (PyFloat_CheckExact(pyObject)) {
-        return scope.Escape(Nan::New<v8::Number>(PyFloat_AsDouble(pyObject)));
-    } else if (PyList_CheckExact(pyObject)) {
-        v8::Local<v8::Array> jsArr = Nan::New<v8::Array>();
-        Py_ssize_t size = PyList_Size(pyObject);
-        for (ssize_t i = 0; i < size; i++) {
-            jsArr->Set(i, PyToJs(PyList_GetItem(pyObject, i)));
-        }
-        return scope.Escape(jsArr);
-    } else if (PyDict_CheckExact(pyObject)) {
-        v8::Local<v8::Object> jsObject = Nan::New<v8::Object>();
-        PyObject *key, *value;
-        Py_ssize_t pos = 0;
-        while (PyDict_Next(pyObject, &pos, &key, &value)) {
-            jsObject->Set(PyToJs(key), PyToJs(value));
-        }
-        return scope.Escape(jsObject);
-    } else if (PyCallable_Check(pyObject)) {
-        v8::Local<v8::Object> jsObject = PyjsObject::NewInstance(PyObjectMakeRef(pyObject));
-        return scope.Escape(PyjsObject::makeFunction(jsObject));
     }
-    return scope.Escape(PyjsObject::NewInstance(PyObjectMakeRef(pyObject)));
+    if (implicit) {
+        if (pyObject == Py_None) {
+            return scope.Escape(Nan::Null());
+        } else if (PyUnicode_CheckExact(pyObject)) {
+            Py_ssize_t size;
+            char *str = PyUnicode_AsUTF8AndSize(pyObject, &size);
+            return scope.Escape(Nan::New(str, size).ToLocalChecked());
+        } else if (PyBytes_CheckExact(pyObject)) {
+            char *buf;
+            Py_ssize_t size;
+            PyBytes_AsStringAndSize(pyObject, &buf, &size);
+            return scope.Escape(Nan::CopyBuffer(buf, size).ToLocalChecked());
+        } else if (PyBool_Check(pyObject)) {
+            return scope.Escape(Nan::New<v8::Boolean>(pyObject == Py_True));
+        } else if (PyFloat_CheckExact(pyObject)) {
+            return scope.Escape(Nan::New<v8::Number>(PyFloat_AsDouble(pyObject)));
+        } else if (PyList_CheckExact(pyObject)) {
+            v8::Local<v8::Array> jsArr = Nan::New<v8::Array>();
+            Py_ssize_t size = PyList_Size(pyObject);
+            for (ssize_t i = 0; i < size; i++) {
+                jsArr->Set(i, PyToJs(PyList_GetItem(pyObject, i)));
+            }
+            return scope.Escape(jsArr);
+        } else if (PyDict_CheckExact(pyObject)) {
+            v8::Local<v8::Object> jsObject = Nan::New<v8::Object>();
+            PyObject *key, *value;
+            Py_ssize_t pos = 0;
+            while (PyDict_Next(pyObject, &pos, &key, &value)) {
+                jsObject->Set(PyToJs(key), PyToJs(value));
+            }
+            return scope.Escape(jsObject);
+        }
+    }
+    if (PyCallable_Check(pyObject)) {
+        v8::Local<v8::Object> jsObject = JsPyWrapper::NewInstance(PyObjectMakeRef(pyObject));
+        return scope.Escape(JsPyWrapper::makeFunction(jsObject));
+    } else {
+        return scope.Escape(JsPyWrapper::NewInstance(PyObjectMakeRef(pyObject)));
+    }
 }
 
 PyObjectWithRef JsToPy(v8::Local<v8::Value> jsValue) {
     Nan::HandleScope scope;
     if (jsValue->IsObject()) {
         v8::Local<v8::Object> jsObject = jsValue->ToObject();
-        PyjsObject *object = PyjsObject::UnWrap(jsObject);
+        JsPyWrapper *object = JsPyWrapper::UnWrap(jsObject);
         if (object) {
             // just unwrap and return
             return object->GetObject();
@@ -91,7 +96,8 @@ PyObjectWithRef JsToPy(v8::Local<v8::Value> jsValue) {
         }
         return pyDict;
     } else if (jsValue->IsUndefined()) {
-        return PyObjectWithRef();
+        //return PyObjectWithRef();
+        return PyObjectMakeRef(Py_None); // avoid some crashes... but this is not expected however, who knows why?
     }
     assert(0); // should not reach here
 }

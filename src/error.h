@@ -1,5 +1,6 @@
 #pragma once
 #include <Python.h>
+#include <frameobject.h>
 #include <iostream>
 #include <sstream>
 #include <string>

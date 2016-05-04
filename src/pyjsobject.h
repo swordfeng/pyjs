@@ -4,12 +4,14 @@
 #include <Python.h>
 #include "python-util.h"
 
-class PyjsObject : public Nan::ObjectWrap {
+class JsPyWrapper : public Nan::ObjectWrap {
 public:
     static void Init(v8::Local<v8::Object> exports);
     static v8::Local<v8::Object> NewInstance(PyObjectWithRef object);
     static bool IsInstance(v8::Local<v8::Object> object);
-    static PyjsObject *UnWrap(v8::Local<v8::Object> object);
+    static JsPyWrapper *UnWrap(v8::Local<v8::Object> object);
+
+    static bool implicitConversionEnabled;
 
     void SetObject(PyObjectWithRef object, v8::Local<v8::Object> instance);
     PyObjectWithRef GetObject();
