@@ -103,18 +103,21 @@ describe('PyObject', function () {
         });
     });
     describe('ref count?', function () {
-        it('make release', function () {
+        it('repeat wrap', function () {
             var a = 'teststring';
             var b = 'teststring';
             for (var i = 0; i < 100; i++) {
                 a = PyObject(a);
-                console.log(a);
                 assert.equal(a.$value(), b);
             }
+        });
+        it('concat string', function () {
+            var a = 'teststring';
+            var b = 'teststring';
             for (var i = 0; i < 100; i++) {
                 a = PyObject(a).$('__add__')('b');
                 b += 'b';
-                assert.equal(a.$value(), b);
+                assert.equal(a, b);
             }
         });
     });

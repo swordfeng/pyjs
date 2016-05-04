@@ -115,7 +115,7 @@ void PyjsObject::Str(const Nan::FunctionCallbackInfo<v8::Value> &args) {
     PyjsObject *wrapper = UnWrap(args.This());
     if (!wrapper || !wrapper->object) return;
 
-    PyjsObjectWithRef object = PyObjectMakeRef(wrapper->object);
+    PyObjectWithRef object = PyObjectMakeRef(wrapper->object);
     if (!PyUnicode_Check(object)) object = PyObjectWithRef(PyObject_Str(wrapper->object));
     args.GetReturnValue().Set(PyToJs(object));
 }
@@ -153,7 +153,7 @@ void PyjsObject::Attr(const Nan::FunctionCallbackInfo<v8::Value> &args) {
 }
 
 void PyjsObject::AttrGetter(v8::Local<v8::String> name, const Nan::PropertyCallbackInfo<v8::Value> &info) {
-    PyjsObject *wrapper = UnWrap(args.This());
+    PyjsObject *wrapper = UnWrap(info.This());
     if (!wrapper || !wrapper->object) return;
 
     if (!name->IsString()) return;
@@ -166,7 +166,7 @@ void PyjsObject::AttrGetter(v8::Local<v8::String> name, const Nan::PropertyCallb
 
 void PyjsObject::AttrSetter(v8::Local<v8::String> name, v8::Local<v8::Value> value,
     const Nan::PropertyCallbackInfo<v8::Value> &info) {
-    PyjsObject *wrapper = UnWrap(args.This());
+    PyjsObject *wrapper = UnWrap(info.This());
     if (!wrapper || !wrapper->object) return;
 
     if (!name->IsString()) return;
@@ -176,7 +176,7 @@ void PyjsObject::AttrSetter(v8::Local<v8::String> name, v8::Local<v8::Value> val
 }
 
 void PyjsObject::AttrEnumerator(const Nan::PropertyCallbackInfo<v8::Array> &info) {
-    PyjsObject *wrapper = UnWrap(args.This());
+    PyjsObject *wrapper = UnWrap(info.This());
     if (!wrapper || !wrapper->object) return;
 
     if (!IsInstance(info.This())) return;
@@ -220,7 +220,7 @@ void PyjsObject::CallFunction(const Nan::FunctionCallbackInfo<v8::Value> &args) 
     }
     Nan::HandleScope scope;
     // arguments
-    PyObjectWithRef pyTuple(PyTuple_New(jsArr->Length()));
+    PyObjectWithRef pyTuple(PyTuple_New(args.Length()));
     for (ssize_t i = 0; i < args.Length(); i++) {
         int result = PyTuple_SetItem(pyTuple, i, JsToPy(args[i]).escape());
         assert(result != -1);
