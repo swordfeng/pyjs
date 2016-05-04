@@ -61,15 +61,15 @@ describe('PyObject', function () {
     describe('py function conversion', function () {
         it('function', function() {
             var test = pyjs.import('test');
-            var func = test.attr('func');
+            var func = test.$attr('func');
             assert.equal('function', typeof func);
             assert.equal(true, func.__proto__ instanceof PyObject);
             assert.equal('hello', func());
         });
         it('function2', function() {
             var test = pyjs.import('test');
-            var func2 = test.attr('func2');
-            assert.equal(5, func2.__call__([2]));
+            var func2 = test.$attr('func2');
+            assert.equal(5, func2.$call([2]));
             assert.equal(5, func2(2));
         });
     });

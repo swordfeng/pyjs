@@ -56,28 +56,13 @@ void PyjsObject::Init(v8::Local<v8::Object> exports) {
 
     Nan::SetNamedPropertyHandler(tpl->InstanceTemplate(), AttrGetter, AttrSetter);
 
-    //v8::Local<v8::ObjectTemplate> ctpl = Nan::New<v8::ObjectTemplate>();
-
     constructorTpl.Reset(tpl);
     exports->Set(Nan::New("PyObject").ToLocalChecked(), tpl->GetFunction());
-/*
-    // make a function from a callable PyObject
-    static const char scriptString[] = "                                            \
-        function makeFunction(object) {                                             \
-            var resultFunction = function () {                                      \
-                var args = [];                                                      \
-                for (var i = 0; i < arguments.length; i++) args.push(arguments[i]); \
-                return object.$call(args);                                          \
-            };                                                                      \
-            resultFunction.__proto__ = object;                                      \
-            return resultFunction;                                                  \
-        };                                                                          \
-        makeFunction                                                                \
-    ";
-    v8::Local<Nan::BoundScript> script = Nan::CompileScript(Nan::New(scriptString).ToLocalChecked()).ToLocalChecked();
-    v8::Local<v8::Function> resultFunction = Nan::RunScript(script).ToLocalChecked().As<v8::Function>();
-    makeFunction.Reset(resultFunction);
-*/
+
+    v8::Local<v8::ObjectTemplate> ctpl = Nan::New<v8::ObjectTemplate>();
+    Nan::SetNamedPropertyHandler(ctpl, AttrGetter, AttrSetter);
+    Nan::SetCallAsFunctionHandler(ctpl, CallFunction);
+    callableTpl.Reset(ctpl);
 }
 
 void PyjsObject::New(const Nan::FunctionCallbackInfo<v8::Value> &args) {
@@ -204,6 +189,27 @@ void PyjsObject::Call(const Nan::FunctionCallbackInfo<v8::Value> &args) {
     }
 }
 
+void PyjsObject::CallFunction(const Nan::FunctionCallbackInfo<v8::Value> &args) {
+    PyObject *pyFunc = UnWrap(args.This())->object;
+    if (!PyCallable_Check(pyFunc)) {
+        // throw
+        return;
+    }
+    Nan::HandleScope scope;
+    // arguments
+    PyObject *pyTuple = PyTuple_New(args.Length());
+    for (ssize_t i = 0; i < args.Length(); i++) {
+        int result = PyTuple_SetItem(pyTuple, i, JsToPy(args[i]));
+        assert(result != -1);
+    }
+
+    PyObject *pyResult = PyObject_CallObject(pyFunc, pyTuple);
+
+    args.GetReturnValue().Set(PyToJs(pyResult));
+    Py_XDECREF(pyResult);
+    Py_DECREF(pyTuple);
+}
+
 // steal one ref
 v8::Local<v8::Object> PyjsObject::NewInstance(PyObject *object) {
     Nan::EscapableHandleScope scope;
@@ -217,4 +223,12 @@ v8::Local<v8::Object> PyjsObject::NewInstance(PyObject *object) {
 bool PyjsObject::IsInstance(v8::Local<v8::Object> object) {
     Nan::HandleScope scope;
     return Nan::New(constructorTpl)->HasInstance(object);
+}
+
+v8::Local<v8::Object> PyjsObject::makeFunction(v8::Local<v8::Object> instance) {
+    Nan::EscapableHandleScope scope;
+    v8::Local<v8::ObjectTemplate> ctpl = Nan::New(callableTpl);
+    v8::Local<v8::Object> callable = ctpl->NewInstance();
+    callable->SetPrototype(instance);
+    return scope.Escape(callable);
 }

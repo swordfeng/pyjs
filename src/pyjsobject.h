@@ -14,6 +14,8 @@ public:
     ~PyjsObject();
     void SetObject(PyObject *object, v8::Local<v8::Object> instance); // steal reference
     PyObject *GetObject(); // return new reference
+
+    static v8::Local<v8::Object> makeFunction(v8::Local<v8::Object> instance);
 private:
     static void New(const Nan::FunctionCallbackInfo<v8::Value> &args);
 
@@ -26,6 +28,7 @@ private:
     static void Attr(const Nan::FunctionCallbackInfo<v8::Value> &args);
 
     static void Call(const Nan::FunctionCallbackInfo<v8::Value> &args);
+    static void CallFunction(const Nan::FunctionCallbackInfo<v8::Value> &args);
 
     static void AttrGetter(v8::Local<v8::String> name, const Nan::PropertyCallbackInfo<v8::Value> &info);
     static void AttrSetter(v8::Local<v8::String> name, v8::Local<v8::Value> value, const Nan::PropertyCallbackInfo<v8::Value> &info);
