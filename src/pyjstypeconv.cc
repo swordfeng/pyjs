@@ -1,8 +1,9 @@
 #include "pyjstypeconv.h"
 #include "pyjsobject.h"
+#include "python-util.h"
 #include <cassert>
 #include <iostream>
-v8::Local<v8::Value> PyToJs(PyObject *pyObject) {
+v8::Local<v8::Value> PyToJs(PyObjectBorrowed pyObject) {
     Nan::EscapableHandleScope scope;
     if (pyObject == nullptr) {
         return scope.Escape(Nan::Undefined());
@@ -38,16 +39,13 @@ v8::Local<v8::Value> PyToJs(PyObject *pyObject) {
         }
         return scope.Escape(jsObject);
     } else if (PyCallable_Check(pyObject)) {
-        Py_INCREF(pyObject);
-        v8::Local<v8::Object> jsObject = PyjsObject::NewInstance(pyObject);
+        v8::Local<v8::Object> jsObject = PyjsObject::NewInstance(PyObjectMakeRef(pyObject));
         return scope.Escape(PyjsObject::makeFunction(jsObject));
     }
-    Py_INCREF(pyObject);
-    return scope.Escape(PyjsObject::NewInstance(pyObject));
+    return scope.Escape(PyjsObject::NewInstance(PyObjectMakeRef(pyObject)));
 }
 
-// return new reference
-PyObject *JsToPy(v8::Local<v8::Value> jsValue) {
+PyObjectWithRef JsToPy(v8::Local<v8::Value> jsValue) {
     Nan::HandleScope scope;
     if (jsValue->IsObject()) {
         v8::Local<v8::Object> jsObject = jsValue->ToObject();
@@ -58,49 +56,42 @@ PyObject *JsToPy(v8::Local<v8::Value> jsValue) {
         }
     }
     if (jsValue->IsNull()) {
-        Py_INCREF(Py_None);
-        return Py_None;
+        return PyObjectMakeRef(Py_None);
     } else if (jsValue->IsString()) {
         v8::Local<v8::String> jsString = jsValue->ToString();
         v8::String::Utf8Value utf8String(jsString);
-        return PyUnicode_FromStringAndSize(*utf8String, jsString->Utf8Length());
+        return PyObjectWithRef(PyUnicode_FromStringAndSize(*utf8String, jsString->Utf8Length()));
     } else if (jsValue->IsTrue()) {
-        Py_INCREF(Py_True);
-        return Py_True;
+        return PyObjectMakeRef(Py_True);
     } else if (jsValue->IsFalse()) {
-        Py_INCREF(Py_False);
-        return Py_False;
+        return PyObjectMakeRef(Py_False);
     } else if (jsValue->IsNumber()) {
-        return PyFloat_FromDouble(jsValue->NumberValue());
+        return PyObjectWithRef(PyFloat_FromDouble(jsValue->NumberValue()));
     } else if (jsValue->IsArray()) {
         v8::Local<v8::Array> jsArr = jsValue.As<v8::Array>();
-        PyObject *pyArr = PyList_New(jsArr->Length());
+        PyObjectWithRef pyArr = PyObjectWithRef(PyList_New(jsArr->Length()));
         for (ssize_t i = 0; i < jsArr->Length(); i++) {
-            int result = PyList_SetItem(pyArr, i, JsToPy(jsArr->Get(i)));
+            int result = PyList_SetItem(pyArr, i, JsToPy(jsArr->Get(i)).escape());
             assert(result != -1);
         }
         return pyArr;
     } else if (jsValue->IsFunction()) {
         assert(0);
     } else if (node::Buffer::HasInstance(jsValue)) { // compability?
-        return PyBytes_FromStringAndSize(node::Buffer::Data(jsValue), node::Buffer::Length(jsValue));
+        return PyObjectWithRef(PyBytes_FromStringAndSize(node::Buffer::Data(jsValue), node::Buffer::Length(jsValue)));
     } else if (jsValue->IsObject()) { // must be after null, array, function, buffer
         v8::Local<v8::Object> jsObject = jsValue->ToObject();
-        PyObject *pyDict = PyDict_New();
+        PyObjectWithRef pyDict = PyObjectWithRef(PyDict_New());
         v8::Local<v8::Array> props = Nan::GetOwnPropertyNames(jsObject).ToLocalChecked();
         for (ssize_t i = 0; i < props->Length(); i++) {
             v8::Local<v8::Value> jsKey = props->Get(i);
             v8::Local<v8::Value> jsValue = jsObject->Get(jsKey);
-            PyObject *pyKey = JsToPy(jsKey);
-            PyObject *pyValue = JsToPy(jsValue);
-            int result = PyDict_SetItem(pyDict, pyKey, pyValue);
+            int result = PyDict_SetItem(pyDict, JsToPy(jsKey), JsToPy(jsValue));
             assert(result != -1);
-            Py_DECREF(pyKey);
-            Py_DECREF(pyValue);
         }
         return pyDict;
     } else if (jsValue->IsUndefined()) {
-        return nullptr;
+        return PyObjectWithRef();
     }
     assert(0); // should not reach here
 }

@@ -2,18 +2,17 @@
 #include <node.h>
 #include <nan.h>
 #include <Python.h>
+#include "python-util.h"
 
 class PyjsObject : public Nan::ObjectWrap {
 public:
     static void Init(v8::Local<v8::Object> exports);
-    static v8::Local<v8::Object> NewInstance(PyObject *object); // steal reference
+    static v8::Local<v8::Object> NewInstance(PyObjectWithRef object);
     static bool IsInstance(v8::Local<v8::Object> object);
     static PyjsObject *UnWrap(v8::Local<v8::Object> object);
 
-    PyjsObject();
-    ~PyjsObject();
-    void SetObject(PyObject *object, v8::Local<v8::Object> instance); // steal reference
-    PyObject *GetObject(); // return new reference
+    void SetObject(PyObjectWithRef object, v8::Local<v8::Object> instance);
+    PyObjectWithRef GetObject();
 
     static v8::Local<v8::Object> makeFunction(v8::Local<v8::Object> instance);
 private:
@@ -37,5 +36,5 @@ private:
     static Nan::Persistent<v8::FunctionTemplate> constructorTpl;
     static Nan::Persistent<v8::ObjectTemplate> callableTpl;
 
-    PyObject *object;
+    PyObjectWithRef object;
 };

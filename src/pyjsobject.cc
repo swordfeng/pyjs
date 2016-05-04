@@ -6,18 +6,11 @@
 Nan::Persistent<v8::FunctionTemplate> PyjsObject::constructorTpl;
 Nan::Persistent<v8::ObjectTemplate> PyjsObject::callableTpl;
 
-PyjsObject::PyjsObject(): object(nullptr) {}
-PyjsObject::~PyjsObject() { Py_XDECREF(object); }
-
-// steal one ref
-void PyjsObject::SetObject(PyObject *object, v8::Local<v8::Object> instance) {
-    Py_XDECREF(this->object);
-    this->object = object;
+void PyjsObject::SetObject(PyObjectWithRef object, v8::Local<v8::Object> instance) {
+    this->object = std::move(object);
 }
 
-// new reference
-PyObject *PyjsObject::GetObject() {
-    Py_XINCREF(object);
+PyObjectWithRef PyjsObject::GetObject() {
     return object;
 }
 
@@ -76,7 +69,7 @@ void PyjsObject::New(const Nan::FunctionCallbackInfo<v8::Value> &args) {
     }
     PyjsObject *wrapper = new PyjsObject();
     wrapper->Wrap(thisObject);
-    if (args.Length() == 1) { // make a value
+    if (args.Length() == 1) {
         wrapper->SetObject(JsToPy(args[0]), thisObject);
     }
     args.GetReturnValue().Set(thisObject);
@@ -106,7 +99,7 @@ void PyjsObject::Str(const Nan::FunctionCallbackInfo<v8::Value> &args) {
 }
 
 void PyjsObject::ValueOf(const Nan::FunctionCallbackInfo<v8::Value> &args) {
-    PyObject *object = UnWrap(args.This())->object;
+    PyObjectBorrowed object = UnWrap(args.This())->object;
     Nan::HandleScope scope;
     if (PyLong_CheckExact(object)) {
         double value = PyLong_AsDouble(object);
@@ -118,36 +111,30 @@ void PyjsObject::ValueOf(const Nan::FunctionCallbackInfo<v8::Value> &args) {
 }
 
 void PyjsObject::Attr(const Nan::FunctionCallbackInfo<v8::Value> &args) {
-    PyObject *object = UnWrap(args.This())->object;
+    PyObjectBorrowed object = UnWrap(args.This())->object;
     Nan::HandleScope scope;
-    PyObject *attr = JsToPy(args[0]);
+    PyObjectWithRef attr(JsToPy(args[0]));
     if (args.Length() == 1) {
-        PyObject *subObject = PyObject_GetAttr(object, attr);
+        PyObjectWithRef subObject(PyObject_GetAttr(object, attr));
         if (subObject) {
             args.GetReturnValue().Set(PyToJs(subObject));
-            Py_DECREF(subObject);
         } else {
             args.GetReturnValue().Set(Nan::Undefined());
         }
     } else if (args.Length() == 2) {
-        PyObject *value = JsToPy(args[1]);
-        PyObject_SetAttr(object, attr, value);
-        Py_DECREF(value);
+        PyObject_SetAttr(object, attr, JsToPy(args[1]));
     }
-    Py_DECREF(attr);
 }
 
 void PyjsObject::AttrGetter(v8::Local<v8::String> name, const Nan::PropertyCallbackInfo<v8::Value> &info) {
     if (!name->IsString()) return;
     PyjsObject *wrapper = UnWrap(info.This());
-    PyObject *object = wrapper->object;
+    PyObjectBorrowed object = wrapper->object;
     if (!object) return;
-    PyObject *attr = JsToPy(name);
-    if (!PyObject_HasAttr(object, attr)) { Py_DECREF(attr); return; }
-    PyObject *subObject = PyObject_GetAttr(object, attr);
+    PyObjectWithRef attr = JsToPy(name);
+    if (!PyObject_HasAttr(object, attr)) return;
+    PyObjectWithRef subObject(PyObject_GetAttr(object, attr));
     info.GetReturnValue().Set(PyToJs(subObject));
-    Py_DECREF(subObject);
-    Py_DECREF(attr);
 }
 
 void PyjsObject::AttrSetter(v8::Local<v8::String> name, v8::Local<v8::Value> value,
@@ -158,11 +145,7 @@ void PyjsObject::AttrSetter(v8::Local<v8::String> name, v8::Local<v8::Value> val
     if (!wrapper) return;
     PyObject *object = wrapper->object;
     if (!object) return;
-    PyObject *attr = JsToPy(name);
-    PyObject *pyValue = JsToPy(value);
-    int result = PyObject_SetAttr(object, attr, pyValue);
-    Py_DECREF(pyValue);
-    Py_DECREF(attr);
+    int result = PyObject_SetAttr(object, JsToPy(name), JsToPy(value));
 }
 
 void PyjsObject::AttrEnumerator(const Nan::PropertyCallbackInfo<v8::Array> &info) {
@@ -186,7 +169,7 @@ void PyjsObject::Call(const Nan::FunctionCallbackInfo<v8::Value> &args) {
         v8::Local<v8::Array> jsArr = args[0].As<v8::Array>();
         PyObject *pyTuple = PyTuple_New(jsArr->Length());
         for (ssize_t i = 0; i < jsArr->Length(); i++) {
-            int result = PyTuple_SetItem(pyTuple, i, JsToPy(jsArr->Get(i)));
+            int result = PyTuple_SetItem(pyTuple, i, JsToPy(jsArr->Get(i)).escape());
             assert(result != -1);
         }
 
@@ -199,7 +182,7 @@ void PyjsObject::Call(const Nan::FunctionCallbackInfo<v8::Value> &args) {
 }
 
 void PyjsObject::CallFunction(const Nan::FunctionCallbackInfo<v8::Value> &args) {
-    PyObject *pyFunc = UnWrap(args.This())->object;
+    PyObjectBorrowed pyFunc = UnWrap(args.This())->object;
     if (!PyCallable_Check(pyFunc)) {
         // throw
         return;
@@ -208,7 +191,7 @@ void PyjsObject::CallFunction(const Nan::FunctionCallbackInfo<v8::Value> &args) 
     // arguments
     PyObject *pyTuple = PyTuple_New(args.Length());
     for (ssize_t i = 0; i < args.Length(); i++) {
-        int result = PyTuple_SetItem(pyTuple, i, JsToPy(args[i]));
+        int result = PyTuple_SetItem(pyTuple, i, JsToPy(args[i]).escape());
         assert(result != -1);
     }
 
@@ -219,8 +202,7 @@ void PyjsObject::CallFunction(const Nan::FunctionCallbackInfo<v8::Value> &args) 
     Py_DECREF(pyTuple);
 }
 
-// steal one ref
-v8::Local<v8::Object> PyjsObject::NewInstance(PyObject *object) {
+v8::Local<v8::Object> PyjsObject::NewInstance(PyObjectWithRef object) {
     Nan::EscapableHandleScope scope;
     v8::Local<v8::Function> cons = Nan::New<v8::FunctionTemplate>(constructorTpl)->GetFunction();
     v8::Local<v8::Object> instance = cons->NewInstance(0, {});
