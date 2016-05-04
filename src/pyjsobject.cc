@@ -54,13 +54,13 @@ void PyjsObject::Init(v8::Local<v8::Object> exports) {
     Nan::SetMethod(prototpl, "inspect", Repr);
     Nan::SetMethod(prototpl, "valueOf", ValueOf);
 
-    Nan::SetNamedPropertyHandler(tpl->InstanceTemplate(), AttrGetter, AttrSetter);
+    Nan::SetNamedPropertyHandler(tpl->InstanceTemplate(), AttrGetter, AttrSetter, 0, 0, AttrEnumerator);
 
     constructorTpl.Reset(tpl);
     exports->Set(Nan::New("PyObject").ToLocalChecked(), tpl->GetFunction());
 
     v8::Local<v8::ObjectTemplate> ctpl = Nan::New<v8::ObjectTemplate>();
-    Nan::SetNamedPropertyHandler(ctpl, AttrGetter, AttrSetter);
+    Nan::SetNamedPropertyHandler(ctpl, AttrGetter, AttrSetter, 0, 0, AttrEnumerator);
     Nan::SetCallAsFunctionHandler(ctpl, CallFunction);
     callableTpl.Reset(ctpl);
 }
@@ -163,6 +163,15 @@ void PyjsObject::AttrSetter(v8::Local<v8::String> name, v8::Local<v8::Value> val
     int result = PyObject_SetAttr(object, attr, pyValue);
     Py_DECREF(pyValue);
     Py_DECREF(attr);
+}
+
+void PyjsObject::AttrEnumerator(const Nan::PropertyCallbackInfo<v8::Array> &info) {
+    PyjsObject *wrapper = UnWrap(info.This());
+    PyObject *object = wrapper->object;
+    if (!object) return;
+    PyObject *pyAttrs = PyObject_Dir(object);
+    info.GetReturnValue().Set(PyToJs(pyAttrs).As<v8::Array>());
+    Py_DECREF(pyAttrs);
 }
 
 void PyjsObject::Call(const Nan::FunctionCallbackInfo<v8::Value> &args) {

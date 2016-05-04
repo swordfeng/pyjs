@@ -32,6 +32,7 @@ private:
 
     static void AttrGetter(v8::Local<v8::String> name, const Nan::PropertyCallbackInfo<v8::Value> &info);
     static void AttrSetter(v8::Local<v8::String> name, v8::Local<v8::Value> value, const Nan::PropertyCallbackInfo<v8::Value> &info);
+    static void AttrEnumerator(const Nan::PropertyCallbackInfo<v8::Array> &info);
 
     static Nan::Persistent<v8::FunctionTemplate> constructorTpl;
     static Nan::Persistent<v8::ObjectTemplate> callableTpl;
