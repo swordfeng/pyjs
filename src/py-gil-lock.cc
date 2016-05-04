@@ -1,5 +1,6 @@
 #include "py-gil-lock.h"
 #include <uv.h>
+#include <iostream>
 
 namespace GILLock {
 void Init() {
@@ -15,7 +16,12 @@ void Init() {
         PyGILState_Release(gstate);
     });
     uv_check_start(&gilensure, [] (uv_check_t *) {
-        gstate = PyGILState_Ensure();
+        if (uv_loop_alive(uv_default_loop())) {
+            std::cout << "alive" << std::endl;
+            gstate = PyGILState_Ensure();
+        }
     });
+    uv_unref((uv_handle_t *)&gilrelease);
+    uv_unref((uv_handle_t *)&gilensure);
 }
 } // namespace GILLock
