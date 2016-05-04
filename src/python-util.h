@@ -15,17 +15,19 @@ public:
         objWithRef._object = nullptr;
     }
     PyObjectWithRef &operator=(const PyObjectWithRef &objWithRef) {
+        Py_XDECREF(_object);
         _object = objWithRef._object;
         Py_XINCREF(_object);
     }
     PyObjectWithRef &operator=(PyObjectWithRef &&objWithRef) {
+        Py_XDECREF(_object);
         _object = objWithRef._object;
         objWithRef._object = nullptr;
     }
-    operator PyObjectBorrowed () { // borrow
+    operator PyObjectBorrowed() { // borrow
         return _object;
     }
-    PyObject *escape() {
+    PyObject *escape() { // new reference
         PyObject *object = _object;
         _object = nullptr;
         return object;

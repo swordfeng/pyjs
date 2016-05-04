@@ -102,4 +102,20 @@ describe('PyObject', function () {
             assert.equal(a + b, 42);
         });
     });
+    describe('ref count?', function () {
+        it('make release', function () {
+            var a = 'teststring';
+            var b = 'teststring';
+            for (var i = 0; i < 100; i++) {
+                a = PyObject(a);
+                console.log(a);
+                assert.equal(a.$value(), b);
+            }
+            for (var i = 0; i < 100; i++) {
+                a = PyObject(a).$('__add__')('b');
+                b += 'b';
+                assert.equal(a.$value(), b);
+            }
+        });
+    });
 });

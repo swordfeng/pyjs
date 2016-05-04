@@ -28,6 +28,28 @@ PyjsObject *PyjsObject::UnWrap(v8::Local<v8::Object> object) {
     return ObjectWrap::Unwrap<PyjsObject>(object);
 }
 
+v8::Local<v8::Object> PyjsObject::NewInstance(PyObjectWithRef object) {
+    Nan::EscapableHandleScope scope;
+    v8::Local<v8::Function> cons = Nan::New<v8::FunctionTemplate>(constructorTpl)->GetFunction();
+    v8::Local<v8::Object> instance = cons->NewInstance(0, {});
+    PyjsObject *wrapper = UnWrap(instance);
+    wrapper->SetObject(object, instance);
+    return scope.Escape(instance);
+}
+
+bool PyjsObject::IsInstance(v8::Local<v8::Object> object) {
+    Nan::HandleScope scope;
+    return Nan::New(constructorTpl)->HasInstance(object);
+}
+
+v8::Local<v8::Object> PyjsObject::makeFunction(v8::Local<v8::Object> instance) {
+    Nan::EscapableHandleScope scope;
+    v8::Local<v8::ObjectTemplate> ctpl = Nan::New(callableTpl);
+    v8::Local<v8::Object> callable = ctpl->NewInstance();
+    callable->SetPrototype(instance);
+    return scope.Escape(callable);
+}
+
 void PyjsObject::Init(v8::Local<v8::Object> exports) {
     Nan::HandleScope scope;
     // Prepare constructor template
@@ -76,43 +98,47 @@ void PyjsObject::New(const Nan::FunctionCallbackInfo<v8::Value> &args) {
 }
 
 void PyjsObject::Value(const Nan::FunctionCallbackInfo<v8::Value> &args) {
-    Nan::HandleScope scope;
     PyjsObject *wrapper = UnWrap(args.This());
-    PyObject *object = wrapper->object;
-    args.GetReturnValue().Set(PyToJs(object));
+    if (!wrapper || !wrapper->object) return;
+
+    args.GetReturnValue().Set(PyToJs(wrapper->object));
 }
 
 void PyjsObject::Repr(const Nan::FunctionCallbackInfo<v8::Value> &args) {
     PyjsObject *wrapper = UnWrap(args.This());
-    Nan::HandleScope scope;
-    PyObject *repr = PyObject_Repr(wrapper->object);
-    args.GetReturnValue().Set(PyToJs(repr));
-    Py_DECREF(repr);
+    if (!wrapper || !wrapper->object) return;
+
+    args.GetReturnValue().Set(PyToJs(PyObjectWithRef(PyObject_Repr(wrapper->object))));
 }
 
 void PyjsObject::Str(const Nan::FunctionCallbackInfo<v8::Value> &args) {
     PyjsObject *wrapper = UnWrap(args.This());
-    Nan::HandleScope scope;
-    PyObject *repr = PyObject_Str(wrapper->object);
-    args.GetReturnValue().Set(PyToJs(repr));
-    Py_DECREF(repr);
+    if (!wrapper || !wrapper->object) return;
+
+    PyjsObjectWithRef object = PyObjectMakeRef(wrapper->object);
+    if (!PyUnicode_Check(object)) object = PyObjectWithRef(PyObject_Str(wrapper->object));
+    args.GetReturnValue().Set(PyToJs(object));
 }
 
 void PyjsObject::ValueOf(const Nan::FunctionCallbackInfo<v8::Value> &args) {
-    PyObjectBorrowed object = UnWrap(args.This())->object;
-    Nan::HandleScope scope;
+    PyjsObject *wrapper = UnWrap(args.This());
+    if (!wrapper || !wrapper->object) return;
+
+    PyObjectBorrowed object = wrapper->object;
     if (PyLong_CheckExact(object)) {
-        double value = PyLong_AsDouble(object);
-        args.GetReturnValue().Set(Nan::New<v8::Number>(value));
+        args.GetReturnValue().Set(Nan::New<v8::Number>(PyLong_AsDouble(object)));
     } else {
-        v8::Local<v8::Value> instance = PyToJs(object);
-        args.GetReturnValue().Set(instance);
+        args.GetReturnValue().Set(PyToJs(object));
     }
 }
 
 void PyjsObject::Attr(const Nan::FunctionCallbackInfo<v8::Value> &args) {
-    PyObjectBorrowed object = UnWrap(args.This())->object;
+    PyjsObject *wrapper = UnWrap(args.This());
+    if (!wrapper || !wrapper->object) return;
+
+    PyObjectBorrowed object = wrapper->object;
     Nan::HandleScope scope;
+
     PyObjectWithRef attr(JsToPy(args[0]));
     if (args.Length() == 1) {
         PyObjectWithRef subObject(PyObject_GetAttr(object, attr));
@@ -127,10 +153,11 @@ void PyjsObject::Attr(const Nan::FunctionCallbackInfo<v8::Value> &args) {
 }
 
 void PyjsObject::AttrGetter(v8::Local<v8::String> name, const Nan::PropertyCallbackInfo<v8::Value> &info) {
+    PyjsObject *wrapper = UnWrap(args.This());
+    if (!wrapper || !wrapper->object) return;
+
     if (!name->IsString()) return;
-    PyjsObject *wrapper = UnWrap(info.This());
     PyObjectBorrowed object = wrapper->object;
-    if (!object) return;
     PyObjectWithRef attr = JsToPy(name);
     if (!PyObject_HasAttr(object, attr)) return;
     PyObjectWithRef subObject(PyObject_GetAttr(object, attr));
@@ -139,87 +166,65 @@ void PyjsObject::AttrGetter(v8::Local<v8::String> name, const Nan::PropertyCallb
 
 void PyjsObject::AttrSetter(v8::Local<v8::String> name, v8::Local<v8::Value> value,
     const Nan::PropertyCallbackInfo<v8::Value> &info) {
+    PyjsObject *wrapper = UnWrap(args.This());
+    if (!wrapper || !wrapper->object) return;
+
     if (!name->IsString()) return;
     if (!IsInstance(info.This())) return;
-    PyjsObject *wrapper = UnWrap(info.This());
-    if (!wrapper) return;
-    PyObject *object = wrapper->object;
-    if (!object) return;
-    int result = PyObject_SetAttr(object, JsToPy(name), JsToPy(value));
+
+    int result = PyObject_SetAttr(wrapper->object, JsToPy(name), JsToPy(value));
 }
 
 void PyjsObject::AttrEnumerator(const Nan::PropertyCallbackInfo<v8::Array> &info) {
-    PyjsObject *wrapper = UnWrap(info.This());
-    PyObject *object = wrapper->object;
-    if (!object) return;
-    PyObject *pyAttrs = PyObject_Dir(object);
+    PyjsObject *wrapper = UnWrap(args.This());
+    if (!wrapper || !wrapper->object) return;
+
+    if (!IsInstance(info.This())) return;
+
+    PyObjectWithRef pyAttrs(PyObject_Dir(wrapper->object));
     info.GetReturnValue().Set(PyToJs(pyAttrs).As<v8::Array>());
-    Py_DECREF(pyAttrs);
 }
 
 void PyjsObject::Call(const Nan::FunctionCallbackInfo<v8::Value> &args) {
-    PyObject *pyFunc = UnWrap(args.This())->object;
+    PyjsObject *wrapper = UnWrap(args.This());
+    if (!wrapper || !wrapper->object) return;
+
+    PyObjectBorrowed pyFunc = wrapper->object;
     if (!PyCallable_Check(pyFunc)) {
         // throw
         return;
     }
+
     Nan::HandleScope scope;
     if (args[0]->IsArray()) {
         // arguments
         v8::Local<v8::Array> jsArr = args[0].As<v8::Array>();
-        PyObject *pyTuple = PyTuple_New(jsArr->Length());
+        PyObjectWithRef pyTuple(PyTuple_New(jsArr->Length()));
         for (ssize_t i = 0; i < jsArr->Length(); i++) {
             int result = PyTuple_SetItem(pyTuple, i, JsToPy(jsArr->Get(i)).escape());
             assert(result != -1);
         }
 
-        PyObject *pyResult = PyObject_CallObject(pyFunc, pyTuple);
-
-        args.GetReturnValue().Set(PyToJs(pyResult));
-        Py_XDECREF(pyResult);
-        Py_DECREF(pyTuple);
+        args.GetReturnValue().Set(PyToJs(PyObjectWithRef(PyObject_CallObject(pyFunc, pyTuple))));
     }
 }
 
 void PyjsObject::CallFunction(const Nan::FunctionCallbackInfo<v8::Value> &args) {
-    PyObjectBorrowed pyFunc = UnWrap(args.This())->object;
+    PyjsObject *wrapper = UnWrap(args.This());
+    if (!wrapper || !wrapper->object) return;
+
+    PyObjectBorrowed pyFunc = wrapper->object;
     if (!PyCallable_Check(pyFunc)) {
         // throw
         return;
     }
     Nan::HandleScope scope;
     // arguments
-    PyObject *pyTuple = PyTuple_New(args.Length());
+    PyObjectWithRef pyTuple(PyTuple_New(jsArr->Length()));
     for (ssize_t i = 0; i < args.Length(); i++) {
         int result = PyTuple_SetItem(pyTuple, i, JsToPy(args[i]).escape());
         assert(result != -1);
     }
 
-    PyObject *pyResult = PyObject_CallObject(pyFunc, pyTuple);
-
-    args.GetReturnValue().Set(PyToJs(pyResult));
-    Py_XDECREF(pyResult);
-    Py_DECREF(pyTuple);
-}
-
-v8::Local<v8::Object> PyjsObject::NewInstance(PyObjectWithRef object) {
-    Nan::EscapableHandleScope scope;
-    v8::Local<v8::Function> cons = Nan::New<v8::FunctionTemplate>(constructorTpl)->GetFunction();
-    v8::Local<v8::Object> instance = cons->NewInstance(0, {});
-    PyjsObject *wrapper = UnWrap(instance);
-    wrapper->SetObject(object, instance);
-    return scope.Escape(instance);
-}
-
-bool PyjsObject::IsInstance(v8::Local<v8::Object> object) {
-    Nan::HandleScope scope;
-    return Nan::New(constructorTpl)->HasInstance(object);
-}
-
-v8::Local<v8::Object> PyjsObject::makeFunction(v8::Local<v8::Object> instance) {
-    Nan::EscapableHandleScope scope;
-    v8::Local<v8::ObjectTemplate> ctpl = Nan::New(callableTpl);
-    v8::Local<v8::Object> callable = ctpl->NewInstance();
-    callable->SetPrototype(instance);
-    return scope.Escape(callable);
+    args.GetReturnValue().Set(PyToJs(PyObjectWithRef(PyObject_CallObject(pyFunc, pyTuple))));
 }
