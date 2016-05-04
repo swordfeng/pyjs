@@ -6,6 +6,7 @@ Under heavy development
 + Error handling
 + Call JavaScript from Python side
 + Check Python functions' result for each time!
++ Make convenient ways to do python add, sub, ... expressions in javascript
 + ~~Use `SetNamedPropertyHandler` instead of set seperately for each PyObject~~
 + ~~Use `SetCallAsFunctionHandler` instead of wrap it for each callable PyObject~~
 + ~~RAII wrapper for Python objects~~
