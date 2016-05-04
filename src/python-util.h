@@ -27,6 +27,9 @@ public:
     operator PyObjectBorrowed() { // borrow
         return _object;
     }
+    PyObject *borrow() {
+        return _object;
+    }
     PyObject *escape() { // new reference
         PyObject *object = _object;
         _object = nullptr;

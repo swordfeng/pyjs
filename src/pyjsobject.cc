@@ -2,6 +2,8 @@
 #include "pyjstypeconv.h"
 #include <iostream>
 #include <cassert>
+#include <frameobject.h>
+#include "error.h"
 
 Nan::Persistent<v8::FunctionTemplate> PyjsObject::constructorTpl;
 Nan::Persistent<v8::ObjectTemplate> PyjsObject::callableTpl;
@@ -95,6 +97,7 @@ void PyjsObject::New(const Nan::FunctionCallbackInfo<v8::Value> &args) {
         wrapper->SetObject(JsToPy(args[0]), thisObject);
     }
     args.GetReturnValue().Set(thisObject);
+    CHECK_PYTHON_ERROR;
 }
 
 void PyjsObject::Value(const Nan::FunctionCallbackInfo<v8::Value> &args) {
@@ -102,6 +105,7 @@ void PyjsObject::Value(const Nan::FunctionCallbackInfo<v8::Value> &args) {
     if (!wrapper || !wrapper->object) return;
 
     args.GetReturnValue().Set(PyToJs(wrapper->object));
+    CHECK_PYTHON_ERROR;
 }
 
 void PyjsObject::Repr(const Nan::FunctionCallbackInfo<v8::Value> &args) {
@@ -109,6 +113,7 @@ void PyjsObject::Repr(const Nan::FunctionCallbackInfo<v8::Value> &args) {
     if (!wrapper || !wrapper->object) return;
 
     args.GetReturnValue().Set(PyToJs(PyObjectWithRef(PyObject_Repr(wrapper->object))));
+    CHECK_PYTHON_ERROR;
 }
 
 void PyjsObject::Str(const Nan::FunctionCallbackInfo<v8::Value> &args) {
@@ -118,6 +123,7 @@ void PyjsObject::Str(const Nan::FunctionCallbackInfo<v8::Value> &args) {
     PyObjectWithRef object = PyObjectMakeRef(wrapper->object);
     if (!PyUnicode_Check(object)) object = PyObjectWithRef(PyObject_Str(wrapper->object));
     args.GetReturnValue().Set(PyToJs(object));
+    CHECK_PYTHON_ERROR;
 }
 
 void PyjsObject::ValueOf(const Nan::FunctionCallbackInfo<v8::Value> &args) {
@@ -130,6 +136,7 @@ void PyjsObject::ValueOf(const Nan::FunctionCallbackInfo<v8::Value> &args) {
     } else {
         args.GetReturnValue().Set(PyToJs(object));
     }
+    CHECK_PYTHON_ERROR;
 }
 
 void PyjsObject::Attr(const Nan::FunctionCallbackInfo<v8::Value> &args) {
@@ -150,6 +157,7 @@ void PyjsObject::Attr(const Nan::FunctionCallbackInfo<v8::Value> &args) {
     } else if (args.Length() == 2) {
         PyObject_SetAttr(object, attr, JsToPy(args[1]));
     }
+    CHECK_PYTHON_ERROR;
 }
 
 void PyjsObject::AttrGetter(v8::Local<v8::String> name, const Nan::PropertyCallbackInfo<v8::Value> &info) {
@@ -162,6 +170,7 @@ void PyjsObject::AttrGetter(v8::Local<v8::String> name, const Nan::PropertyCallb
     if (!PyObject_HasAttr(object, attr)) return;
     PyObjectWithRef subObject(PyObject_GetAttr(object, attr));
     info.GetReturnValue().Set(PyToJs(subObject));
+    CHECK_PYTHON_ERROR;
 }
 
 void PyjsObject::AttrSetter(v8::Local<v8::String> name, v8::Local<v8::Value> value,
@@ -172,7 +181,8 @@ void PyjsObject::AttrSetter(v8::Local<v8::String> name, v8::Local<v8::Value> val
     if (!name->IsString()) return;
     if (!IsInstance(info.This())) return;
 
-    int result = PyObject_SetAttr(wrapper->object, JsToPy(name), JsToPy(value));
+    PyObject_SetAttr(wrapper->object, JsToPy(name), JsToPy(value));
+    CHECK_PYTHON_ERROR;
 }
 
 void PyjsObject::AttrEnumerator(const Nan::PropertyCallbackInfo<v8::Array> &info) {
@@ -183,6 +193,7 @@ void PyjsObject::AttrEnumerator(const Nan::PropertyCallbackInfo<v8::Array> &info
 
     PyObjectWithRef pyAttrs(PyObject_Dir(wrapper->object));
     info.GetReturnValue().Set(PyToJs(pyAttrs).As<v8::Array>());
+    CHECK_PYTHON_ERROR;
 }
 
 void PyjsObject::Call(const Nan::FunctionCallbackInfo<v8::Value> &args) {
@@ -191,8 +202,7 @@ void PyjsObject::Call(const Nan::FunctionCallbackInfo<v8::Value> &args) {
 
     PyObjectBorrowed pyFunc = wrapper->object;
     if (!PyCallable_Check(pyFunc)) {
-        // throw
-        return;
+        return Nan::ThrowTypeError("not a function");
     }
 
     Nan::HandleScope scope;
@@ -202,11 +212,10 @@ void PyjsObject::Call(const Nan::FunctionCallbackInfo<v8::Value> &args) {
         PyObjectWithRef pyTuple(PyTuple_New(jsArr->Length()));
         for (ssize_t i = 0; i < jsArr->Length(); i++) {
             int result = PyTuple_SetItem(pyTuple, i, JsToPy(jsArr->Get(i)).escape());
-            assert(result != -1);
         }
-
         args.GetReturnValue().Set(PyToJs(PyObjectWithRef(PyObject_CallObject(pyFunc, pyTuple))));
     }
+    CHECK_PYTHON_ERROR;
 }
 
 void PyjsObject::CallFunction(const Nan::FunctionCallbackInfo<v8::Value> &args) {
@@ -215,8 +224,7 @@ void PyjsObject::CallFunction(const Nan::FunctionCallbackInfo<v8::Value> &args) 
 
     PyObjectBorrowed pyFunc = wrapper->object;
     if (!PyCallable_Check(pyFunc)) {
-        // throw
-        return;
+        return Nan::ThrowTypeError("not a function");
     }
     Nan::HandleScope scope;
     // arguments
@@ -225,6 +233,6 @@ void PyjsObject::CallFunction(const Nan::FunctionCallbackInfo<v8::Value> &args) 
         int result = PyTuple_SetItem(pyTuple, i, JsToPy(args[i]).escape());
         assert(result != -1);
     }
-
     args.GetReturnValue().Set(PyToJs(PyObjectWithRef(PyObject_CallObject(pyFunc, pyTuple))));
+    CHECK_PYTHON_ERROR;
 }

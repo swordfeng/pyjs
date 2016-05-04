@@ -1,4 +1,5 @@
 from .testclass import *
+from .error import *
 
 a = 5.0
 def func():
