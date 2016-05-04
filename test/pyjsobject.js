@@ -3,7 +3,7 @@ var pyjs = require('../build/Release/pyjs-native.node');
 var assert = require('chai').assert;
 var jsesc = require('jsesc');
 var PyObject = pyjs.PyObject;
-var builtins = pyjs.builtins();
+var builtins = pyjs.builtins;
 var pyimport = pyjs.import;
 
 describe('PyObject', function () {
@@ -118,6 +118,13 @@ describe('PyObject', function () {
                 a = PyObject(a).$('__add__')('b');
                 b += 'b';
                 assert.equal(a, b);
+            }
+        });
+        it('no leak', function () {
+            var a = 'teststring';
+            var b = 'teststring';
+            for (var i = 0; i < 100000; i++) {
+                PyObject(a);
             }
         });
     });

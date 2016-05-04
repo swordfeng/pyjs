@@ -1,5 +1,5 @@
 var assert = require('chai').assert;
-var builtins = require('../').builtins();
+var builtins = require('../').builtins;
 
 describe('builtins', function () {
     it('len', function () {
