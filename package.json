@@ -1,7 +1,7 @@
 {
   "name": "pyjs",
   "version": "0.1.0",
-  "description": "",
+  "description": "Call Python code from Node.js side, in the same process",
   "main": "index.js",
   "scripts": {
     "test": "node-gyp build && mocha"
@@ -10,7 +10,7 @@
     "type": "git",
     "url": "git+https://github.com/swordfeng/pyjs.git"
   },
-  "author": "",
+  "author": "swordfeng",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/swordfeng/pyjs/issues"
