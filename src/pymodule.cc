@@ -10,21 +10,21 @@ static PyModuleDef pyjsmodule = {
     -1,
     NULL, NULL, NULL, NULL, NULL
 };
+static PyObject* module = nullptr;
 
 PyObject *GetModule(void) {
-    static PyObject* m = nullptr;
+    return module;
+}
 
-    if (!m) {
-        if (PyType_Ready(&JsFunctionType) < 0)
-            std::cout << "err!" << std::endl;
+void Init() {
+    JsFunction_Init();
+    if (PyType_Ready(&JsFunctionType) < 0)
+        std::cout << "err!" << std::endl;
 
-        m = PyModule_Create(&pyjsmodule);
+    module = PyModule_Create(&pyjsmodule);
 
-        Py_INCREF(&JsFunctionType);
-        PyModule_AddObject(m, "JsFunction", (PyObject *)&JsFunctionType);
-    }
-
-    return m;
+    Py_INCREF(&JsFunctionType);
+    PyModule_AddObject(module, "JsFunction", (PyObject *)&JsFunctionType);
 }
 
 } // namespace JsPyModule

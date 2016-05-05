@@ -5,5 +5,6 @@
 
 
 namespace JsPyModule {
+void Init();
 PyObject *GetModule(void);
 } // namespace JsPyModule

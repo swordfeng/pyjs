@@ -90,7 +90,7 @@ void Init(v8::Local<v8::Object> exports) {
     }
 
     // py module init
-    JsPyModule::JsFunction_Init();
+    JsPyModule::Init();
 
     Nan::SetAccessor(exports, Nan::New("module").ToLocalChecked(), Module);
     Nan::SetAccessor(exports, Nan::New("builtins").ToLocalChecked(), Builtins);
