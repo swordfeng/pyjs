@@ -1,5 +1,6 @@
 #include "pyjsfunction.h"
 #include "typeconv.h"
+#include <iostream>
 
 namespace JsPyModule {
 
@@ -113,6 +114,7 @@ void JsFunction_Init() {
     uv_async_init(uv_default_loop(), &functionHandle, functionCallCallback);
     uv_async_init(uv_default_loop(), &functionRefChanged, functionRefChangedCallback);
     uv_unref((uv_handle_t *)&functionRefChanged);
+    uv_async_send(&functionRefChanged);
     uv_mutex_init(&functionHandleLock);
     uv_mutex_init(&functionCallLock);
     uv_cond_init(&functionCallCond);
