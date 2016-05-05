@@ -5,7 +5,7 @@
             "sources": [
                 "src/pyjs.cc",
                 "src/jsobject.cc",
-                "src/pyjstypeconv.cc",
+                "src/typeconv.cc",
                 "src/gil-lock.cc"
             ],
             "include_dirs" : [

@@ -7,7 +7,7 @@
 #include <vector>
 #include <node.h>
 #include <nan.h>
-#include "pyjstypeconv.h"
+#include "typeconv.h"
 
 // May return!
 #define CHECK_PYTHON_ERROR \

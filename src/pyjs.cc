@@ -7,7 +7,7 @@
 #include <cassert>
 
 #include "jsobject.h"
-#include "pyjstypeconv.h"
+#include "typeconv.h"
 #include "python-util.h"
 #include "error.h"
 #include "gil-lock.h"
