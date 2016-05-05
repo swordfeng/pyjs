@@ -1,7 +1,6 @@
 'use strict';
 var pyjs = require('../build/Release/pyjs-native.node');
 var assert = require('chai').assert;
-var jsesc = require('jsesc');
 var PyObject = pyjs.PyObject;
 var builtins = pyjs.builtins;
 var pyimport = pyjs.import;
