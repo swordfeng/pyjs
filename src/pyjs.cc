@@ -12,6 +12,8 @@
 #include "error.h"
 #include "gil-lock.h"
 
+#include "pymodule.h"
+
 
 class AtExit {
 public:
@@ -44,6 +46,12 @@ void Eval(const Nan::FunctionCallbackInfo<v8::Value> &args) {
     PyObjectWithRef object(PyRun_String(*Nan::Utf8String(args[0]), Py_eval_input, global, local));
     CHECK_PYTHON_ERROR;
     args.GetReturnValue().Set(PyToJs(object, JsPyWrapper::implicitConversionEnabled));
+}
+
+void Module(v8::Local<v8::String> name, const Nan::PropertyCallbackInfo<v8::Value> &args) {
+    Nan::HandleScope scope;
+    PyObjectWithRef object = PyObjectMakeRef(JsPyModule::GetModule());
+    args.GetReturnValue().Set(JsPyWrapper::NewInstance(object));
 }
 
 void Init(v8::Local<v8::Object> exports) {
@@ -81,7 +89,10 @@ void Init(v8::Local<v8::Object> exports) {
         PyMem_RawFree(argv[i]);
     }
 
-    //Nan::SetMethod(exports, "eval", PyjsEval);
+    // py module init
+    JsPyModule::JsFunction_Init();
+
+    Nan::SetAccessor(exports, Nan::New("module").ToLocalChecked(), Module);
     Nan::SetAccessor(exports, Nan::New("builtins").ToLocalChecked(), Builtins);
     Nan::SetMethod(exports, "import", Import);
     Nan::SetMethod(exports, "eval", Eval);

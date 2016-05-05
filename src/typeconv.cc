@@ -1,6 +1,7 @@
 #include "typeconv.h"
 #include "jsobject.h"
 #include "python-util.h"
+#include "pyjsfunction.h"
 #include <cassert>
 #include <iostream>
 
@@ -40,6 +41,8 @@ v8::Local<v8::Value> PyToJs(PyObjectBorrowed pyObject, bool implicit) {
                 jsObject->Set(PyToJs(key), PyToJs(value));
             }
             return scope.Escape(jsObject);
+        } else if (PyObject_Type(pyObject) == (PyObject *)&JsPyModule::JsFunctionType) {
+            return scope.Escape(JsPyModule::JsFunction_GetFunction(pyObject));
         }
     }
     if (PyCallable_Check(pyObject)) {
@@ -81,7 +84,7 @@ PyObjectWithRef JsToPy(v8::Local<v8::Value> jsValue) {
         }
         return pyArr;
     } else if (jsValue->IsFunction()) {
-        assert(0);
+        return PyObjectWithRef(JsPyModule::JsFunction_NewFunction(jsValue.As<v8::Function>()));
     } else if (node::Buffer::HasInstance(jsValue)) { // compability?
         return PyObjectWithRef(PyBytes_FromStringAndSize(node::Buffer::Data(jsValue), node::Buffer::Length(jsValue)));
     } else if (jsValue->IsObject()) { // must be after null, array, function, buffer
@@ -100,4 +103,26 @@ PyObjectWithRef JsToPy(v8::Local<v8::Value> jsValue) {
         return PyObjectMakeRef(Py_None); // avoid some crashes... but this is not expected however, who knows why?
     }
     assert(0); // should not reach here
+}
+
+v8::Local<v8::Value> PyTupleToJsArray(PyObjectBorrowed pyObject) {
+    Nan::EscapableHandleScope scope;
+    v8::Local<v8::Array> arr = Nan::New<v8::Array>();
+    ssize_t size = PyTuple_Size(pyObject);
+    for (ssize_t i = 0; i < size; i++) {
+        arr->Set(i, PyToJs(PyTuple_GetItem(pyObject, i)));
+    }
+    return scope.Escape(arr);
+}
+
+PyObjectWithRef JsArrayToPyTuple(v8::Local<v8::Value> jsValue) {
+    Nan::HandleScope scope;
+    v8::Local<v8::Array> arr = jsValue.As<v8::Array>();
+    ssize_t size = arr->Length();
+    PyObjectWithRef tup(PyTuple_New(size));
+    for (ssize_t i = 0; i < size; i++) {
+        PyTuple_SetItem(tup, i, JsToPy(arr->Get(i)).escape());
+        arr->Set(i, PyToJs(PyTuple_GetItem(tup, i)));
+    }
+    return tup;
 }

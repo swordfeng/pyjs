@@ -6,7 +6,9 @@
                 "src/pyjs.cc",
                 "src/jsobject.cc",
                 "src/typeconv.cc",
-                "src/gil-lock.cc"
+                "src/gil-lock.cc",
+                "src/pyjsfunction.cc",
+                "src/pymodule.cc"
             ],
             "include_dirs" : [
                 "<!(node -e \"require('nan')\")"
