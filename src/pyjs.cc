@@ -43,7 +43,7 @@ void Eval(const Nan::FunctionCallbackInfo<v8::Value> &args) {
     PyObjectWithRef global(PyDict_New()), local(PyDict_New());
     PyObjectWithRef object(PyRun_String(*Nan::Utf8String(args[0]), Py_eval_input, global, local));
     CHECK_PYTHON_ERROR;
-    args.GetReturnValue().Set(PyToJs(object));
+    args.GetReturnValue().Set(PyToJs(object, JsPyWrapper::implicitConversionEnabled));
 }
 
 void Init(v8::Local<v8::Object> exports) {
