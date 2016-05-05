@@ -1,6 +1,6 @@
 {
   "name": "pyjs",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Call Python code from Node.js side, in the same process",
   "main": "index.js",
   "scripts": {
