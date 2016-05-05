@@ -6,11 +6,11 @@
 #include <memory>
 #include <cassert>
 
-#include "pyjsobject.h"
+#include "jsobject.h"
 #include "pyjstypeconv.h"
 #include "python-util.h"
 #include "error.h"
-#include "py-gil-lock.h"
+#include "gil-lock.h"
 
 
 class AtExit {

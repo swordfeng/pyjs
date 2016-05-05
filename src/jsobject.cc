@@ -1,4 +1,4 @@
-#include "pyjsobject.h"
+#include "jsobject.h"
 #include "pyjstypeconv.h"
 #include <iostream>
 #include <cassert>

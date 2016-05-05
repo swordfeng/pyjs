@@ -4,9 +4,9 @@
             "target_name": "pyjs-native",
             "sources": [
                 "src/pyjs.cc",
-                "src/pyjsobject.cc",
+                "src/jsobject.cc",
                 "src/pyjstypeconv.cc",
-                "src/py-gil-lock.cc"
+                "src/gil-lock.cc"
             ],
             "include_dirs" : [
                 "<!(node -e \"require('nan')\")"

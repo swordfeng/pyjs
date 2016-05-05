@@ -1,5 +1,5 @@
 #include "pyjstypeconv.h"
-#include "pyjsobject.h"
+#include "jsobject.h"
 #include "python-util.h"
 #include <cassert>
 #include <iostream>
