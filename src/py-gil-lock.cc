@@ -17,7 +17,6 @@ void Init() {
     });
     uv_check_start(&gilensure, [] (uv_check_t *) {
         if (uv_loop_alive(uv_default_loop())) {
-            std::cout << "alive" << std::endl;
             gstate = PyGILState_Ensure();
         }
     });
