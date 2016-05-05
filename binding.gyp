@@ -12,10 +12,10 @@
                 "<!(node -e \"require('nan')\")"
             ],
             "cflags": [
-                "<!(python-config --cflags | sed 's/-Wstrict-prototypes//')"
+                "<!(python3-config --cflags | sed 's/-Wstrict-prototypes//')"
             ],
             "ldflags": [
-                "<!(python-config --ldflags)"
+                "<!(python3-config --ldflags)"
             ]
         }
     ]
