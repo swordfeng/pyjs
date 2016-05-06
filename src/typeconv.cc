@@ -2,8 +2,8 @@
 #include "jsobject.h"
 #include "python-util.h"
 #include "pyjsfunction.h"
-#include <cassert>
 #include <iostream>
+#include "debug.h"
 
 v8::Local<v8::Value> PyToJs(PyObjectBorrowed pyObject, bool implicit) {
     Nan::EscapableHandleScope scope;
@@ -80,7 +80,7 @@ PyObjectWithRef JsToPy(v8::Local<v8::Value> jsValue) {
         PyObjectWithRef pyArr = PyObjectWithRef(PyList_New(jsArr->Length()));
         for (ssize_t i = 0; i < jsArr->Length(); i++) {
             int result = PyList_SetItem(pyArr, i, JsToPy(jsArr->Get(i)).escape());
-            assert(result != -1);
+            ASSERT(result != -1);
         }
         return pyArr;
     } else if (jsValue->IsFunction()) {
@@ -95,14 +95,14 @@ PyObjectWithRef JsToPy(v8::Local<v8::Value> jsValue) {
             v8::Local<v8::Value> jsKey = props->Get(i);
             v8::Local<v8::Value> jsValue = jsObject->Get(jsKey);
             int result = PyDict_SetItem(pyDict, JsToPy(jsKey), JsToPy(jsValue));
-            assert(result != -1);
+            ASSERT(result != -1);
         }
         return pyDict;
     } else if (jsValue->IsUndefined()) {
         //return PyObjectWithRef();
         return PyObjectMakeRef(Py_None); // avoid some crashes... but this is not expected however, who knows why?
     }
-    assert(0); // should not reach here
+    ASSERT(0); // should not reach here
 }
 
 v8::Local<v8::Value> PyTupleToJsArray(PyObjectBorrowed pyObject) {

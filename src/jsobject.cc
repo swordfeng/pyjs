@@ -1,8 +1,8 @@
 #include "jsobject.h"
 #include "typeconv.h"
 #include <iostream>
-#include <cassert>
 #include "error.h"
+#include "debug.h"
 
 Nan::Persistent<v8::FunctionTemplate> JsPyWrapper::constructorTpl;
 Nan::Persistent<v8::ObjectTemplate> JsPyWrapper::callableTpl;
@@ -253,7 +253,7 @@ void JsPyWrapper::CallFunction(const Nan::FunctionCallbackInfo<v8::Value> &args)
     PyObjectWithRef pyTuple(PyTuple_New(args.Length()));
     for (ssize_t i = 0; i < args.Length(); i++) {
         int result = PyTuple_SetItem(pyTuple, i, JsToPy(args[i]).escape());
-        assert(result != -1);
+        ASSERT(result != -1);
     }
     args.GetReturnValue().Set(PyToJs(PyObjectWithRef(PyObject_CallObject(pyFunc, pyTuple)), implicitConversionEnabled));
     CHECK_PYTHON_ERROR;

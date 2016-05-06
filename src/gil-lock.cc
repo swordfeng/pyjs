@@ -1,7 +1,7 @@
 #include "gil-lock.h"
 #include <uv.h>
 #include <iostream>
-#include "assert.h"
+#include "debug.h"
 
 namespace GILLock {
 void Init() {

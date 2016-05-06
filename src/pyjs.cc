@@ -4,7 +4,6 @@
 #include <iostream>
 #include <functional>
 #include <memory>
-#include <cassert>
 
 #include "jsobject.h"
 #include "typeconv.h"
