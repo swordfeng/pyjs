@@ -53,6 +53,7 @@ v8::Local<v8::Object> JsPyWrapper::makeFunction(v8::Local<v8::Object> instance) 
 }
 
 void JsPyWrapper::Init(v8::Local<v8::Object> exports) {
+    GILStateHolder gilholder;
     Nan::HandleScope scope;
     // Prepare constructor template
     v8::Local<v8::FunctionTemplate> tpl = Nan::New<v8::FunctionTemplate>(New);
@@ -91,6 +92,7 @@ void JsPyWrapper::Init(v8::Local<v8::Object> exports) {
 }
 
 void JsPyWrapper::New(const Nan::FunctionCallbackInfo<v8::Value> &args) {
+    GILStateHolder gilholder;
     Nan::HandleScope scope;
     v8::Local<v8::Object> thisObject;
     if (!args.IsConstructCall()) {
@@ -111,6 +113,7 @@ void JsPyWrapper::New(const Nan::FunctionCallbackInfo<v8::Value> &args) {
 }
 
 void JsPyWrapper::Value(const Nan::FunctionCallbackInfo<v8::Value> &args) {
+    GILStateHolder gilholder;
     JsPyWrapper *wrapper = UnWrap(args.This());
     if (!wrapper || !wrapper->object) return;
 
@@ -119,6 +122,7 @@ void JsPyWrapper::Value(const Nan::FunctionCallbackInfo<v8::Value> &args) {
 }
 
 void JsPyWrapper::Repr(const Nan::FunctionCallbackInfo<v8::Value> &args) {
+    GILStateHolder gilholder;
     JsPyWrapper *wrapper = UnWrap(args.This());
     if (!wrapper || !wrapper->object) return;
 
@@ -127,6 +131,7 @@ void JsPyWrapper::Repr(const Nan::FunctionCallbackInfo<v8::Value> &args) {
 }
 
 void JsPyWrapper::Str(const Nan::FunctionCallbackInfo<v8::Value> &args) {
+    GILStateHolder gilholder;
     JsPyWrapper *wrapper = UnWrap(args.This());
     if (!wrapper || !wrapper->object) return;
 
@@ -137,6 +142,7 @@ void JsPyWrapper::Str(const Nan::FunctionCallbackInfo<v8::Value> &args) {
 }
 
 void JsPyWrapper::ValueOf(const Nan::FunctionCallbackInfo<v8::Value> &args) {
+    GILStateHolder gilholder;
     JsPyWrapper *wrapper = UnWrap(args.This());
     if (!wrapper || !wrapper->object) return;
 
@@ -150,6 +156,7 @@ void JsPyWrapper::ValueOf(const Nan::FunctionCallbackInfo<v8::Value> &args) {
 }
 
 void JsPyWrapper::Attr(const Nan::FunctionCallbackInfo<v8::Value> &args) {
+    GILStateHolder gilholder;
     JsPyWrapper *wrapper = UnWrap(args.This());
     if (!wrapper || !wrapper->object) return;
 
@@ -171,6 +178,7 @@ void JsPyWrapper::Attr(const Nan::FunctionCallbackInfo<v8::Value> &args) {
 }
 
 void JsPyWrapper::AttrGetter(v8::Local<v8::String> name, const Nan::PropertyCallbackInfo<v8::Value> &info) {
+    GILStateHolder gilholder;
     JsPyWrapper *wrapper = UnWrap(info.This());
     if (!wrapper || !wrapper->object) return;
 
@@ -185,6 +193,7 @@ void JsPyWrapper::AttrGetter(v8::Local<v8::String> name, const Nan::PropertyCall
 
 void JsPyWrapper::AttrSetter(v8::Local<v8::String> name, v8::Local<v8::Value> value,
     const Nan::PropertyCallbackInfo<v8::Value> &info) {
+    GILStateHolder gilholder;
     JsPyWrapper *wrapper = UnWrap(info.This());
     if (!wrapper || !wrapper->object) return;
 
@@ -196,6 +205,7 @@ void JsPyWrapper::AttrSetter(v8::Local<v8::String> name, v8::Local<v8::Value> va
 }
 
 void JsPyWrapper::AttrEnumerator(const Nan::PropertyCallbackInfo<v8::Array> &info) {
+    GILStateHolder gilholder;
     JsPyWrapper *wrapper = UnWrap(info.This());
     if (!wrapper || !wrapper->object) return;
 
@@ -207,6 +217,7 @@ void JsPyWrapper::AttrEnumerator(const Nan::PropertyCallbackInfo<v8::Array> &inf
 }
 
 void JsPyWrapper::Call(const Nan::FunctionCallbackInfo<v8::Value> &args) {
+    GILStateHolder gilholder;
     JsPyWrapper *wrapper = UnWrap(args.This());
     if (!wrapper || !wrapper->object) return;
 
@@ -229,6 +240,7 @@ void JsPyWrapper::Call(const Nan::FunctionCallbackInfo<v8::Value> &args) {
 }
 
 void JsPyWrapper::CallFunction(const Nan::FunctionCallbackInfo<v8::Value> &args) {
+    GILStateHolder gilholder;
     JsPyWrapper *wrapper = UnWrap(args.This());
     if (!wrapper || !wrapper->object) return;
 

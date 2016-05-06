@@ -1,6 +1,7 @@
 #include "gil-lock.h"
 #include <uv.h>
 #include <iostream>
+#include "assert.h"
 
 namespace GILLock {
 void Init() {
@@ -16,7 +17,8 @@ void Init() {
         _save = PyEval_SaveThread();
     });
     uv_check_start(&gilensure, [] (uv_check_t *) {
-            if (_save) PyEval_RestoreThread(_save);
+        ASSERT(_save);
+        PyEval_RestoreThread(_save);
     });
     uv_unref((uv_handle_t *)&gilrelease);
     uv_unref((uv_handle_t *)&gilensure);

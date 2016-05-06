@@ -1,13 +1,24 @@
 #pragma once
 #include <Python.h>
 
+class GILStateHolder {
+public:
+    GILStateHolder(): gstate(PyGILState_Ensure()) {}
+    ~GILStateHolder() { PyGILState_Release(gstate); }
+private:
+    PyGILState_STATE gstate;
+};
+
 typedef PyObject *PyObjectBorrowed;
 
 class PyObjectWithRef { // PyObject with one reference
 public:
     PyObjectWithRef(): _object(nullptr) {}
     explicit PyObjectWithRef(PyObject * const &object): _object(object) {} // steal one reference
-    ~PyObjectWithRef() { Py_XDECREF(_object); }
+    ~PyObjectWithRef() {
+        GILStateHolder holder;
+        Py_XDECREF(_object);
+    }
     PyObjectWithRef(const PyObjectWithRef &objWithRef): _object(objWithRef._object) {
         Py_XINCREF(_object);
     }
@@ -15,12 +26,14 @@ public:
         objWithRef._object = nullptr;
     }
     PyObjectWithRef &operator=(const PyObjectWithRef &objWithRef) {
+        GILStateHolder holder;
         Py_XDECREF(_object);
         _object = objWithRef._object;
         Py_XINCREF(_object);
         return *this;
     }
     PyObjectWithRef &operator=(PyObjectWithRef &&objWithRef) {
+        GILStateHolder holder;
         Py_XDECREF(_object);
         _object = objWithRef._object;
         objWithRef._object = nullptr;
@@ -42,6 +55,7 @@ private:
 };
 
 static inline PyObjectWithRef PyObjectMakeRef(const PyObjectBorrowed &object) {
+    GILStateHolder gilholder;
     Py_XINCREF(object);
     return PyObjectWithRef(object);
 }

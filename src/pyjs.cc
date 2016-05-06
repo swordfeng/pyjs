@@ -24,12 +24,14 @@ private:
 };
 
 void Builtins(v8::Local<v8::String> name, const Nan::PropertyCallbackInfo<v8::Value> &args) {
+    GILStateHolder gilholder;
     Nan::HandleScope scope;
     PyObjectWithRef object(PyImport_ImportModule("builtins"));
     args.GetReturnValue().Set(JsPyWrapper::NewInstance(object));
 }
 
 void Import(const Nan::FunctionCallbackInfo<v8::Value> &args) {
+    GILStateHolder gilholder;
     Nan::HandleScope scope;
     if (args.Length() == 0 || !args[0]->IsString()) return Nan::ThrowTypeError("invalid module name");
     PyObjectWithRef object(PyImport_ImportModule(*static_cast<v8::String::Utf8Value>(args[0]->ToString())));
@@ -38,6 +40,7 @@ void Import(const Nan::FunctionCallbackInfo<v8::Value> &args) {
 }
 
 void Eval(const Nan::FunctionCallbackInfo<v8::Value> &args) {
+    GILStateHolder gilholder;
     Nan::HandleScope scope;
     if (args.Length() == 0 || !args[0]->IsString()) return Nan::ThrowTypeError("invalid Python code");
     PyThreadState *threadState = PyThreadState_Get();
@@ -49,6 +52,7 @@ void Eval(const Nan::FunctionCallbackInfo<v8::Value> &args) {
 }
 
 void Module(v8::Local<v8::String> name, const Nan::PropertyCallbackInfo<v8::Value> &args) {
+    GILStateHolder gilholder;
     Nan::HandleScope scope;
     PyObjectWithRef object = PyObjectMakeRef(JsPyModule::GetModule());
     args.GetReturnValue().Set(JsPyWrapper::NewInstance(object));
