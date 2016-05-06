@@ -86,8 +86,9 @@ static PyObject *JsFunction_call(PyObject *obj, PyObject *args, PyObject *kw) {
 
 PyTypeObject JsFunctionType = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    "pyjs.JsFunction",                                      /* tp_name */
-    sizeof(JsFunction)};
+    "pyjs.JsFunction",
+    sizeof(JsFunction)
+};
 
 void JsFunction_Init() {
     JsFunctionType.tp_dealloc = (destructor) JsFunction_dealloc;
