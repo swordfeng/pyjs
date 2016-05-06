@@ -1,6 +1,7 @@
 #include "pyjsfunction.h"
 #include "typeconv.h"
 #include "debug.h"
+#include "error.h"
 
 namespace JsPyModule {
 
@@ -23,7 +24,10 @@ void performFunction(JsFunction *self) {
     v8::Local<v8::Function> func = Nan::New(self->savedFunction);
     Nan::TryCatch trycatch;
     v8::Local<v8::Value> result = func->Call(Nan::Undefined(), argc, argv);
-    self->obj = JsToPy(result).escape();
+    if (trycatch.HasCaught()) {
+        makePyError(trycatch);
+        self->obj = nullptr;
+    } else self->obj = JsToPy(result).escape();
 }
 
 void functionCallCallback(uv_async_t *async) {

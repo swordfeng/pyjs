@@ -8,7 +8,8 @@
                 "src/typeconv.cc",
                 "src/gil-lock.cc",
                 "src/pyjsfunction.cc",
-                "src/pymodule.cc"
+                "src/pymodule.cc",
+                "src/error.cc"
             ],
             "include_dirs" : [
                 "<!(node -e \"require('nan')\")"
