@@ -83,6 +83,7 @@ static PyObject *JsFunction_call(PyObject *obj, PyObject *args, PyObject *kw) {
         Py_END_ALLOW_THREADS
         uv_mutex_unlock(&functionCallLock);
     }
+    uv_mutex_unlock(&functionHandleLock);
     // deal with returned value
     return self->obj;
 }
