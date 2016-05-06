@@ -31,6 +31,7 @@ void functionCallCallback(uv_async_t *async) {
     uv_mutex_lock(&functionCallLock);
     performFunction(self);
     uv_cond_signal(&functionCallCond);
+    uv_mutex_unlock(&functionCallLock);
 }
 
 void functionRefChangedCallback(uv_async_t *async) {
@@ -77,7 +78,9 @@ static PyObject *JsFunction_call(PyObject *obj, PyObject *args, PyObject *kw) {
         uv_mutex_lock(&functionCallLock);
         functionHandle.data = self;
         uv_async_send(&functionHandle);
+        Py_BEGIN_ALLOW_THREADS
         uv_cond_wait(&functionCallCond, &functionCallLock);
+        Py_END_ALLOW_THREADS
         uv_mutex_unlock(&functionCallLock);
     }
     // deal with returned value
