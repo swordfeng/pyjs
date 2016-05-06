@@ -1,7 +1,6 @@
 #include <node.h>
 #include <nan.h>
 #include <Python.h>
-#include <iostream>
 #include <functional>
 #include <memory>
 
@@ -10,7 +9,7 @@
 #include "python-util.h"
 #include "error.h"
 #include "gil-lock.h"
-
+#include "debug.h"
 #include "pymodule.h"
 
 
@@ -79,7 +78,7 @@ void Init(v8::Local<v8::Object> exports) {
         Py_Finalize();
     });
     GILLock::Init();
-
+    TypeConvInit();
     JsPyWrapper::Init(exports);
 
     // init sys.argv

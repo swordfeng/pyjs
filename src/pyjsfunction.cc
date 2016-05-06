@@ -1,6 +1,6 @@
 #include "pyjsfunction.h"
 #include "typeconv.h"
-#include <iostream>
+#include "debug.h"
 
 namespace JsPyModule {
 
@@ -35,7 +35,7 @@ void functionCallCallback(uv_async_t *async) {
 }
 
 void functionRefChangedCallback(uv_async_t *async) {
-    // std::cout << "function ref count changed to " << functionRefCount << std::endl;
+    LOG("function ref count changed to %u\n", functionRefCount);
     if (functionRefCount == 0) {
         uv_unref((uv_handle_t *)&functionHandle);
     } else {

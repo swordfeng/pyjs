@@ -2,8 +2,12 @@
 #include "jsobject.h"
 #include "python-util.h"
 #include "pyjsfunction.h"
-#include <iostream>
+#include "datetime.h"
 #include "debug.h"
+
+void TypeConvInit() {
+    PyDateTime_IMPORT;
+}
 
 v8::Local<v8::Value> PyToJs(PyObjectBorrowed pyObject, bool implicit) {
     Nan::EscapableHandleScope scope;
@@ -43,6 +47,12 @@ v8::Local<v8::Value> PyToJs(PyObjectBorrowed pyObject, bool implicit) {
             return scope.Escape(jsObject);
         } else if (PyObject_Type(pyObject) == (PyObject *)&JsPyModule::JsFunctionType) {
             return scope.Escape(JsPyModule::JsFunction_GetFunction(pyObject));
+        } else if (PyDateTime_CheckExact(pyObject)) {
+            PyObjectWithRef pyTsFunc(PyObject_GetAttrString(pyObject, "timestamp"));
+            PyObjectWithRef pyTs(PyObject_CallObject(pyTsFunc, PyObjectWithRef(PyTuple_New(0))));
+            double timestamp = PyFloat_AsDouble(pyTs);
+            v8::Local<v8::Date> jsObject = Nan::New<v8::Date>(timestamp * 1000.0).ToLocalChecked();
+            return scope.Escape(jsObject);
         }
     }
     if (PyCallable_Check(pyObject)) {
@@ -87,7 +97,13 @@ PyObjectWithRef JsToPy(v8::Local<v8::Value> jsValue) {
         return PyObjectWithRef(JsPyModule::JsFunction_NewFunction(jsValue.As<v8::Function>()));
     } else if (node::Buffer::HasInstance(jsValue)) { // compability?
         return PyObjectWithRef(PyBytes_FromStringAndSize(node::Buffer::Data(jsValue), node::Buffer::Length(jsValue)));
-    } else if (jsValue->IsObject()) { // must be after null, array, function, buffer
+    } else if (jsValue->IsDate()) {
+        double timestamp = jsValue.As<v8::Date>()->ValueOf() / 1000.0;
+        PyObjectWithRef args(PyTuple_New(1));
+        PyTuple_SetItem(args, 0, PyFloat_FromDouble(timestamp));
+        PyObjectWithRef pyDateTime(PyDateTime_FromTimestamp(args));
+        return pyDateTime;
+    } else if (jsValue->IsObject()) { // must be after null, array, function, buffer, date
         v8::Local<v8::Object> jsObject = jsValue->ToObject();
         PyObjectWithRef pyDict = PyObjectWithRef(PyDict_New());
         v8::Local<v8::Array> props = Nan::GetOwnPropertyNames(jsObject).ToLocalChecked();
