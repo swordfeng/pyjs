@@ -236,17 +236,29 @@ void JsPyWrapper::Call(const Nan::FunctionCallbackInfo<v8::Value> &args) {
     if (!PyCallable_Check(pyFunc)) {
         return Nan::ThrowTypeError("not a function");
     }
-
     Nan::HandleScope scope;
+    PyObjectWithRef pyArgs(PyTuple_New(0));
+    PyObjectWithRef pyKw(nullptr);
+
     if (args[0]->IsArray()) {
-        // arguments
-        v8::Local<v8::Array> jsArr = args[0].As<v8::Array>();
-        PyObjectWithRef pyTuple(PyTuple_New(jsArr->Length()));
-        for (ssize_t i = 0; i < jsArr->Length(); i++) {
-            int result = PyTuple_SetItem(pyTuple, i, JsToPy(jsArr->Get(i)).escape());
+        v8::Local<v8::Array> jsArgs = args[0].As<v8::Array>();
+        pyArgs = PyObjectWithRef(PyTuple_New(jsArgs->Length()));
+        for (ssize_t i = 0; i < jsArgs->Length(); i++) {
+            int result = PyTuple_SetItem(pyArgs, i, JsToPy(jsArgs->Get(i)).escape());
         }
-        args.GetReturnValue().Set(PyToJs(PyObjectWithRef(PyObject_CallObject(pyFunc, pyTuple)), implicitConversionEnabled));
+        if (args[1]->IsObject()) {
+            v8::Local<v8::Object> jsKw = args[1]->ToObject();
+            pyKw = PyObjectWithRef(PyDict_New());
+            v8::Local<v8::Array> keys = Nan::GetOwnPropertyNames(jsKw).ToLocalChecked();
+            for (ssize_t i = 0; i < keys->Length(); i++) {
+                v8::Local<v8::Value> jsKey = keys->Get(i);
+                v8::Local<v8::Value> jsValue = jsKw->Get(jsKey);
+                int result = PyDict_SetItem(pyKw, JsToPy(jsKey), JsToPy(jsValue));
+                ASSERT(result != -1);
+            }
+        }
     }
+    args.GetReturnValue().Set(PyToJs(PyObjectWithRef(PyObject_Call(pyFunc, pyArgs, pyKw)), implicitConversionEnabled));
     CHECK_PYTHON_ERROR;
 }
 
