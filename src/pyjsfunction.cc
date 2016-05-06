@@ -34,7 +34,7 @@ void functionCallCallback(uv_async_t *async) {
 }
 
 void functionRefChangedCallback(uv_async_t *async) {
-    std::cout << "function ref count changed to " << functionRefCount << std::endl;
+    // std::cout << "function ref count changed to " << functionRefCount << std::endl;
     if (functionRefCount == 0) {
         uv_unref((uv_handle_t *)&functionHandle);
     } else {
