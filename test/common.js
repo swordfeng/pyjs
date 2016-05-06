@@ -11,5 +11,7 @@ before(function () {
     var sys = py.import('sys');
     if (sys.path.indexOf('') === -1) {
         sys.path = [''].concat(sys.path);
+
+        global.testModule = py.import('test');
     }
 });
