@@ -68,11 +68,13 @@ void Init(v8::Local<v8::Object> exports) {
     }
 
     // python initialize
-    Py_Initialize();
+    Py_InitializeEx(0);
     // not working?
     //node::AtExit([] (void *) { Py_Finalize(); std::cout << "exit" << std::endl; });
-    static AtExit exitHandler(Py_Finalize);
-
+    static AtExit exitHandler([] {
+        if (!PyGILState_Check()) PyGILState_Ensure();
+        Py_Finalize();
+    });
     GILLock::Init();
 
     JsPyWrapper::Init(exports);
