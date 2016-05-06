@@ -115,7 +115,7 @@ void JsPyWrapper::New(const Nan::FunctionCallbackInfo<v8::Value> &args) {
 void JsPyWrapper::Value(const Nan::FunctionCallbackInfo<v8::Value> &args) {
     GILStateHolder gilholder;
     JsPyWrapper *wrapper = UnWrap(args.This());
-    if (!wrapper || !wrapper->object) return;
+    if (!wrapper || !wrapper->object) return Nan::ThrowTypeError("Unexpected object");
 
     args.GetReturnValue().Set(PyToJs(wrapper->object));
     CHECK_PYTHON_ERROR;
@@ -124,7 +124,7 @@ void JsPyWrapper::Value(const Nan::FunctionCallbackInfo<v8::Value> &args) {
 void JsPyWrapper::Repr(const Nan::FunctionCallbackInfo<v8::Value> &args) {
     GILStateHolder gilholder;
     JsPyWrapper *wrapper = UnWrap(args.This());
-    if (!wrapper || !wrapper->object) return;
+    if (!wrapper || !wrapper->object) return Nan::ThrowTypeError("Unexpected object");
 
     args.GetReturnValue().Set(PyToJs(PyObjectWithRef(PyObject_Repr(wrapper->object))));
     CHECK_PYTHON_ERROR;
@@ -133,7 +133,7 @@ void JsPyWrapper::Repr(const Nan::FunctionCallbackInfo<v8::Value> &args) {
 void JsPyWrapper::Str(const Nan::FunctionCallbackInfo<v8::Value> &args) {
     GILStateHolder gilholder;
     JsPyWrapper *wrapper = UnWrap(args.This());
-    if (!wrapper || !wrapper->object) return;
+    if (!wrapper || !wrapper->object) return Nan::ThrowTypeError("Unexpected object");
 
     PyObjectWithRef object = PyObjectMakeRef(wrapper->object);
     if (!PyUnicode_Check(object)) object = PyObjectWithRef(PyObject_Str(wrapper->object));
@@ -144,7 +144,7 @@ void JsPyWrapper::Str(const Nan::FunctionCallbackInfo<v8::Value> &args) {
 void JsPyWrapper::ValueOf(const Nan::FunctionCallbackInfo<v8::Value> &args) {
     GILStateHolder gilholder;
     JsPyWrapper *wrapper = UnWrap(args.This());
-    if (!wrapper || !wrapper->object) return;
+    if (!wrapper || !wrapper->object) return Nan::ThrowTypeError("Unexpected object");
 
     PyObjectBorrowed object = wrapper->object;
     if (PyLong_CheckExact(object)) {
@@ -158,7 +158,7 @@ void JsPyWrapper::ValueOf(const Nan::FunctionCallbackInfo<v8::Value> &args) {
 void JsPyWrapper::Attr(const Nan::FunctionCallbackInfo<v8::Value> &args) {
     GILStateHolder gilholder;
     JsPyWrapper *wrapper = UnWrap(args.This());
-    if (!wrapper || !wrapper->object) return;
+    if (!wrapper || !wrapper->object) return Nan::ThrowTypeError("Unexpected object");
 
     PyObjectBorrowed object = wrapper->object;
     Nan::HandleScope scope;
@@ -180,7 +180,7 @@ void JsPyWrapper::Attr(const Nan::FunctionCallbackInfo<v8::Value> &args) {
 void JsPyWrapper::AttrGetter(v8::Local<v8::String> name, const Nan::PropertyCallbackInfo<v8::Value> &info) {
     GILStateHolder gilholder;
     JsPyWrapper *wrapper = UnWrap(info.This());
-    if (!wrapper || !wrapper->object) return;
+    if (!wrapper || !wrapper->object) return Nan::ThrowTypeError("Unexpected object");
 
     if (!name->IsString()) return;
     PyObjectBorrowed object = wrapper->object;
@@ -195,7 +195,7 @@ void JsPyWrapper::AttrSetter(v8::Local<v8::String> name, v8::Local<v8::Value> va
     const Nan::PropertyCallbackInfo<v8::Value> &info) {
     GILStateHolder gilholder;
     JsPyWrapper *wrapper = UnWrap(info.This());
-    if (!wrapper || !wrapper->object) return;
+    if (!wrapper || !wrapper->object) return Nan::ThrowTypeError("Unexpected object");
 
     if (!name->IsString()) return;
     if (!IsInstance(info.This())) return;
@@ -207,7 +207,7 @@ void JsPyWrapper::AttrSetter(v8::Local<v8::String> name, v8::Local<v8::Value> va
 void JsPyWrapper::AttrEnumerator(const Nan::PropertyCallbackInfo<v8::Array> &info) {
     GILStateHolder gilholder;
     JsPyWrapper *wrapper = UnWrap(info.This());
-    if (!wrapper || !wrapper->object) return;
+    if (!wrapper || !wrapper->object) return Nan::ThrowTypeError("Unexpected object");
 
     if (!IsInstance(info.This())) return;
 
@@ -219,7 +219,7 @@ void JsPyWrapper::AttrEnumerator(const Nan::PropertyCallbackInfo<v8::Array> &inf
 void JsPyWrapper::Call(const Nan::FunctionCallbackInfo<v8::Value> &args) {
     GILStateHolder gilholder;
     JsPyWrapper *wrapper = UnWrap(args.This());
-    if (!wrapper || !wrapper->object) return;
+    if (!wrapper || !wrapper->object) return Nan::ThrowTypeError("Unexpected object");
 
     PyObjectBorrowed pyFunc = wrapper->object;
     if (!PyCallable_Check(pyFunc)) {
@@ -242,7 +242,7 @@ void JsPyWrapper::Call(const Nan::FunctionCallbackInfo<v8::Value> &args) {
 void JsPyWrapper::CallFunction(const Nan::FunctionCallbackInfo<v8::Value> &args) {
     GILStateHolder gilholder;
     JsPyWrapper *wrapper = UnWrap(args.This());
-    if (!wrapper || !wrapper->object) return;
+    if (!wrapper || !wrapper->object) return Nan::ThrowTypeError("Unexpected object");
 
     PyObjectBorrowed pyFunc = wrapper->object;
     if (!PyCallable_Check(pyFunc)) {

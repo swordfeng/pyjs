@@ -41,15 +41,7 @@ void functionRefChangedCallback(uv_async_t *async) {
         uv_ref((uv_handle_t *)&functionHandle);
     }
 }
-/*
-static PyObject *JsFunction_new(PyTypeObject *type, PyObject *args, PyObject *kwds) {
-    JsFunction *self;
-    self = (JsFunction *)type->tp_alloc(type, 0);
-    functionRefCount++;
-    uv_async_send(&functionRefChanged);
-    return (PyObject *)self;
-}
-*/
+
 PyObject *JsFunction_NewFunction(v8::Local<v8::Function> func) {
     JsFunction *self;
     self = (JsFunction *)JsFunctionType.tp_alloc(&JsFunctionType, 0);
@@ -92,13 +84,6 @@ static PyObject *JsFunction_call(PyObject *obj, PyObject *args, PyObject *kw) {
     return self->obj;
 }
 
-static PyMethodDef JsFunction_methods[] = {
-    /*{"__call__", (PyCFunction)JsFunction_call, METH_VARARGS,
-     "call javascript function"
- },*/
-    {NULL}  /* Sentinel */
-};
-
 PyTypeObject JsFunctionType = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "pyjs.JsFunction",                                      /* tp_name */
@@ -107,8 +92,6 @@ PyTypeObject JsFunctionType = {
 void JsFunction_Init() {
     JsFunctionType.tp_dealloc = (destructor) JsFunction_dealloc;
     JsFunctionType.tp_flags = Py_TPFLAGS_DEFAULT;
-    //JsFunctionType.tp_methods = JsFunction_methods;
-    //JsFunctionType.tp_new = JsFunction_new;
     JsFunctionType.tp_call = JsFunction_call;
 
     mainThread = PyThreadState_Get();
