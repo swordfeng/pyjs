@@ -67,6 +67,7 @@ void JsPyWrapper::Init(v8::Local<v8::Object> exports) {
     Nan::SetMethod(prototpl, "$value", Value);
     Nan::SetMethod(prototpl, "$attr", Attr);
     Nan::SetMethod(prototpl, "$", Attr);
+    Nan::SetMethod(prototpl, "$type", Type);
 
     Nan::SetMethod(prototpl, "toString", Str);
     Nan::SetMethod(prototpl, "inspect", Repr);
@@ -152,6 +153,16 @@ void JsPyWrapper::ValueOf(const Nan::FunctionCallbackInfo<v8::Value> &args) {
     } else {
         args.GetReturnValue().Set(PyToJs(object));
     }
+    CHECK_PYTHON_ERROR;
+}
+
+void JsPyWrapper::Type(const Nan::FunctionCallbackInfo<v8::Value> &args) {
+    GILStateHolder gilholder;
+    JsPyWrapper *wrapper = UnWrap(args.This());
+    if (!wrapper || !wrapper->object) return Nan::ThrowTypeError("Unexpected object");
+
+    PyObjectBorrowed object = wrapper->object;
+    args.GetReturnValue().Set(PyToJs(PyObject_Type(object)));
     CHECK_PYTHON_ERROR;
 }
 
