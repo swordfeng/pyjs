@@ -1,4 +1,4 @@
-var py = require('../');
+require('./common');
 
 describe('madness', function () {
     //

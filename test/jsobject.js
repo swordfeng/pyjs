@@ -1,13 +1,4 @@
-'use strict';
-var pyjs = require('../build/Release/pyjs-native.node');
-var assert = require('chai').assert;
-var PyObject = pyjs.PyObject;
-var builtins = pyjs.builtins;
-var pyimport = pyjs.import;
-
-pyjs.implicitConversion = false;
-pyjs.import('sys').path.insert(pyjs.builtins.int(0), __dirname + '/../');
-pyjs.implicitConversion = true;
+require('./common');
 
 describe('PyObject', function () {
     describe('type conversion', function () {
@@ -63,14 +54,14 @@ describe('PyObject', function () {
     });
     describe('py function conversion', function () {
         it('function', function() {
-            var test = pyjs.import('test');
+            var test = py.import('test');
             var func = test.$attr('func');
             assert.equal('function', typeof func);
             assert.equal(true, func.__proto__ instanceof PyObject);
             assert.equal('hello', func());
         });
         it('function2', function() {
-            var test = pyjs.import('test');
+            var test = py.import('test');
             var func2 = test.$attr('func2');
             assert.equal(5, func2.$call([2]));
             assert.equal(5, func2(2));
@@ -90,7 +81,7 @@ describe('PyObject', function () {
             assert.equal(a.bit_length(), 4);
         });
         it('setter', function () {
-            var testclass = pyimport('test').testclass;
+            var testclass = py.import('test').testclass;
             var a = testclass();
             assert.equal(a.a, 2);
             a.a = 4;
