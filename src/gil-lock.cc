@@ -17,6 +17,7 @@ void Init() {
         _save = PyEval_SaveThread();
     });
     uv_check_start(&gilensure, [] (uv_check_t *) {
+        if (PyGILState_Check()) return;
         ASSERT(_save);
         PyEval_RestoreThread(_save);
     });
