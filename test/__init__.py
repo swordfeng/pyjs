@@ -1,5 +1,4 @@
-from .testclass import *
-from .error import *
+import time
 
 a = 5.0
 def function1():
@@ -10,3 +9,20 @@ def function2(x):
 
 def callFunction(func, arg):
     return func(arg)
+
+def waitThenCall(secs, func):
+    time.sleep(secs)
+    func()
+
+def willraise():
+    raise TypeError('test')
+
+
+def willraiseUpperframe(n):
+    if not (n > 0):
+        willraise()
+    else:
+        willraiseUpperframe(n - 1)
+
+class testclass:
+    a = 2.0

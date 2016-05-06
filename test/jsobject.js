@@ -72,7 +72,14 @@ describe('PyObject', function () {
         it('should find the correct wrapper in prototype chain', function () {
             var a = PyObject('abc');
             var b = { __proto__: a };
-            assert(b.$value(), 'abc');
+            var c = { __proto__: b };
+            b.$value().should.equal('abc');
+            c.$value().should.equal('abc');
+        });
+        it('should throw if nothing is on prototype chain', function () {
+            var a = PyObject('abc');
+            var b = { $value: a.$value };
+            (() => b.$value()).should.throw(/Unexpected object/);
         });
     });
     describe('getter and setters', function () {
@@ -81,8 +88,7 @@ describe('PyObject', function () {
             assert.equal(a.bit_length(), 4);
         });
         it('setter', function () {
-            var testclass = py.import('test').testclass;
-            var a = testclass();
+            var a = testModule.testclass();
             assert.equal(a.a, 2);
             a.a = 4;
             assert.equal(a.a, 4);
@@ -90,7 +96,7 @@ describe('PyObject', function () {
         });
     });
     describe('valueOf', function () {
-        it ('int', function () {
+        it ('should convert int to number', function () {
             var a = builtins.int(32);
             var b = builtins.float(10);
             assert.equal(a + b, 42);

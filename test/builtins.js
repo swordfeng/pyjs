@@ -1,7 +1,7 @@
 require('./common');
 describe('builtins', function () {
     it('len', function () {
-        assert(2, builtins.len([1,2]));
+        assert.equal(2, builtins.len([1,2]));
     });
     it('large integer add', function () {
         var inta = builtins.int('340282366920938463463374607431768211455');
