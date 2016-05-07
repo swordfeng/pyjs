@@ -18,7 +18,12 @@ extern "C" {
     } while(0)
 
 #define LOG(...) \
-    do {} while (0)
+    do { \
+        fflush(stdout); \
+        fprintf(stderr, "\33[1;32m"); \
+        fprintf(stderr, __VA_ARGS__); \
+        fprintf(stderr, "\33[0m\n"); \
+    } while (0)
 
 #ifdef __cplusplus
 }
