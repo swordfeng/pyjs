@@ -2,6 +2,7 @@
 #include "typeconv.h"
 #include "debug.h"
 #include "error.h"
+#include <vector>
 
 namespace JsPyModule {
 
@@ -17,13 +18,13 @@ static PyThreadState *mainThread;
 void performFunction(JsFunction *self) {
     Nan::HandleScope scope;
     ssize_t argc = PyTuple_Size(self->obj);
-    v8::Local<v8::Value> argv[argc];
+    std::vector<v8::Local<v8::Value>> argv(argc);
     for (ssize_t i = 0; i < argc; i++) {
         argv[i] = PyToJs(PyTuple_GetItem(self->obj, i));
     }
     v8::Local<v8::Function> func = Nan::New(self->savedFunction);
     Nan::TryCatch trycatch;
-    v8::Local<v8::Value> result = func->Call(Nan::Undefined(), argc, argv);
+    v8::Local<v8::Value> result = func->Call(Nan::Undefined(), argc, argv.data());
     if (trycatch.HasCaught()) {
         makePyError(trycatch);
         self->obj = nullptr;
