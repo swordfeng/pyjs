@@ -42,7 +42,7 @@ v8::Local<v8::Value> makeJsErrorObject() {
         PyTuple_SetItem(args, 1, PyLong_FromLong(last->tb_lineno));
         PyObjectWithRef line(PyObject_CallObject(getline, args));
         const char *lineCString = PyUnicode_AsUTF8(line);
-        if (*lineCString != 0) stackStream << "      ->" << lineCString;
+        if (*lineCString != 0) stackStream << "    >>" << lineCString;
     }
 
     for (auto it = frames.rbegin(); it != frames.rend(); it++) {
@@ -94,6 +94,10 @@ void makePyError(Nan::TryCatch &trycatch) {
         if (stack->IsString()) {
             LOG("stack: %s\n", *Nan::Utf8String(stack));
         }
+        LOG("current:\n");
+        PyErr_SetString(PyExc_Exception, *Nan::Utf8String(stack));
+    } else {
+        PyErr_SetString(PyExc_Exception, *Nan::Utf8String(e->ToString()));
     }
     trycatch.Reset();
 }
