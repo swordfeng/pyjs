@@ -245,6 +245,7 @@ void JsPyWrapper::Call(const Nan::FunctionCallbackInfo<v8::Value> &args) {
         pyArgs = PyObjectWithRef(PyTuple_New(jsArgs->Length()));
         for (ssize_t i = 0; i < jsArgs->Length(); i++) {
             int result = PyTuple_SetItem(pyArgs, i, JsToPy(jsArgs->Get(i)).escape());
+            ASSERT(result != -1);
         }
         if (args[1]->IsObject()) {
             v8::Local<v8::Object> jsKw = args[1]->ToObject();

@@ -39,7 +39,7 @@ void functionCallCallback(uv_async_t *async) {
 }
 
 void functionRefChangedCallback(uv_async_t *async) {
-    LOG("function ref count changed to %u\n", functionRefCount);
+    LOG("function ref count changed to %lu\n", functionRefCount);
     if (functionRefCount == 0) {
         uv_unref((uv_handle_t *)&functionHandle);
     } else {
@@ -92,13 +92,12 @@ static PyObject *JsFunction_call(PyObject *obj, PyObject *args, PyObject *kw) {
     return self->obj;
 }
 
-PyTypeObject JsFunctionType = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "pyjs.JsFunction",
-    sizeof(JsFunction)
-};
+PyTypeObject JsFunctionType; // static variable inits to 0
 
 void JsFunction_Init() {
+    JsFunctionType.ob_base = {PyObject_HEAD_INIT(NULL) 0};
+    JsFunctionType.tp_name = "pyjs.JsFunction";
+    JsFunctionType.tp_basicsize = sizeof(JsFunction);
     JsFunctionType.tp_dealloc = (destructor) JsFunction_dealloc;
     JsFunctionType.tp_flags = Py_TPFLAGS_DEFAULT;
     JsFunctionType.tp_call = JsFunction_call;

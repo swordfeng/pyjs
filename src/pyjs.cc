@@ -41,7 +41,6 @@ void Eval(const Nan::FunctionCallbackInfo<v8::Value> &args) {
     GILStateHolder gilholder;
     Nan::HandleScope scope;
     if (args.Length() == 0 || !args[0]->IsString()) return Nan::ThrowTypeError("invalid Python code");
-    PyThreadState *threadState = PyThreadState_Get();
 
     PyObjectWithRef global(PyDict_New()), local(PyDict_New());
     PyObjectWithRef object(PyRun_String(*Nan::Utf8String(args[0]), Py_eval_input, global, local));
