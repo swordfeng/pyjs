@@ -20,6 +20,7 @@ v8::Local<v8::Value> PyToJs(PyObjectBorrowed pyObject, bool implicit) {
         } else if (PyUnicode_CheckExact(pyObject)) {
             Py_ssize_t size;
             char *str = PyUnicode_AsUTF8AndSize(pyObject, &size);
+            if (!str) return scope.Escape(Nan::Undefined());
             return scope.Escape(Nan::New(str, size).ToLocalChecked());
         } else if (PyBytes_CheckExact(pyObject)) {
             char *buf;
@@ -33,6 +34,7 @@ v8::Local<v8::Value> PyToJs(PyObjectBorrowed pyObject, bool implicit) {
         } else if (PyList_CheckExact(pyObject)) {
             v8::Local<v8::Array> jsArr = Nan::New<v8::Array>();
             Py_ssize_t size = PyList_Size(pyObject);
+            ASSERT(size >= 0);
             for (ssize_t i = 0; i < size; i++) {
                 jsArr->Set(i, PyToJs(PyList_GetItem(pyObject, i)));
             }
@@ -68,8 +70,7 @@ PyObjectWithRef JsToPy(v8::Local<v8::Value> jsValue) {
     if (jsValue->IsObject()) {
         v8::Local<v8::Object> jsObject = jsValue->ToObject();
         JsPyWrapper *object = JsPyWrapper::UnWrap(jsObject);
-        if (object) {
-            // just unwrap and return
+        if (object) { // found wrapper python object
             return object->GetObject();
         }
     }
@@ -77,8 +78,7 @@ PyObjectWithRef JsToPy(v8::Local<v8::Value> jsValue) {
         return PyObjectMakeRef(Py_None);
     } else if (jsValue->IsString()) {
         v8::Local<v8::String> jsString = jsValue->ToString();
-        v8::String::Utf8Value utf8String(jsString);
-        return PyObjectWithRef(PyUnicode_FromStringAndSize(*utf8String, jsString->Utf8Length()));
+        return PyObjectWithRef(PyUnicode_FromStringAndSize(*Nan::Utf8String(jsString), jsString->Utf8Length()));
     } else if (jsValue->IsTrue()) {
         return PyObjectMakeRef(Py_True);
     } else if (jsValue->IsFalse()) {
@@ -125,6 +125,7 @@ v8::Local<v8::Value> PyTupleToJsArray(PyObjectBorrowed pyObject) {
     Nan::EscapableHandleScope scope;
     v8::Local<v8::Array> arr = Nan::New<v8::Array>();
     ssize_t size = PyTuple_Size(pyObject);
+    ASSERT(size > 0);
     for (ssize_t i = 0; i < size; i++) {
         arr->Set(i, PyToJs(PyTuple_GetItem(pyObject, i)));
     }
@@ -138,7 +139,6 @@ PyObjectWithRef JsArrayToPyTuple(v8::Local<v8::Value> jsValue) {
     PyObjectWithRef tup(PyTuple_New(size));
     for (ssize_t i = 0; i < size; i++) {
         PyTuple_SetItem(tup, i, JsToPy(arr->Get(i)).escape());
-        arr->Set(i, PyToJs(PyTuple_GetItem(tup, i)));
     }
     return tup;
 }
