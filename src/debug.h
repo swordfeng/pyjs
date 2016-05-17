@@ -1,5 +1,5 @@
 #pragma once
-#include <unistd.h>
+#include <stdlib.h>
 #include <stdio.h>
 
 #ifdef __cplusplus
@@ -13,7 +13,7 @@ extern "C" {
             fprintf(stderr, "\33[1;31m"); \
             fprintf(stderr, "%s:%d: %s: Assertion `%s' failed.\n", __FILE__, __LINE__, __func__, #cond ); \
             fprintf(stderr, "\33[0m\n"); \
-            _exit(1); \
+            exit(1); \
         } \
     } while(0)
 
