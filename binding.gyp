@@ -14,11 +14,17 @@
             "include_dirs" : [
                 "<!(node -e \"require('nan')\")"
             ],
-            "cflags": [
-                "<!(python3-config --cflags | sed 's/-Wstrict-prototypes//')"
-            ],
-            "ldflags": [
-                "<!(python3-config --ldflags)"
+            "conditions": [
+                ["OS=='win'", {
+
+                }, {
+                    "cflags": [
+                        "<!(python3-config --includes)"
+                    ],
+                    "ldflags": [
+                        "<!(python3-config --ldflags)"
+                    ]
+                }]
             ]
         }
     ]
