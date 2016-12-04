@@ -1,10 +1,8 @@
 'use strict';
 
-/*
-var pyjs_native = require('./build/Release/pyjs-native.node');
-module.exports = function (script) {
-    return pyjs_native.eval(script);
+if (process.env.NODE_ENV === 'debug') {
+    module.exports = require('./build/Debug/pyjs-native.node');
+} else {
+    module.exports = require('./build/Release/pyjs-native.node');
 }
-module.exports.eval = pyjs_native.eval;
-*/
-module.exports = require('./build/Release/pyjs-native.node');
+
