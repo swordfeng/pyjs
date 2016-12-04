@@ -18,6 +18,6 @@
   "homepage": "https://github.com/swordfeng/pyjs#readme",
   "dependencies": {
     "chai": "^3.5.0",
-    "nan": "^2.3.3"
+    "nan": "^2.4.0"
   }
 }
