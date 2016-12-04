@@ -3,6 +3,7 @@
 #include <Python.h>
 #include <functional>
 #include <memory>
+#include <dlfcn.h>
 
 #include "jsobject.h"
 #include "typeconv.h"
@@ -69,12 +70,14 @@ void Init(v8::Local<v8::Object> exports) {
     }
 
     // python initialize
+    void *python_lib = dlopen("libpython3.5m.so", RTLD_LAZY | RTLD_GLOBAL); // TODO: obtain library name from python-config?
     Py_InitializeEx(0);
     // not working?
     //node::AtExit([] (void *) { Py_Finalize(); std::cout << "exit" << std::endl; });
-    static AtExit exitHandler([] {
+    static AtExit exitHandler([python_lib] {
         if (!PyGILState_Check()) PyGILState_Ensure();
         Py_Finalize();
+        dlclose(python_lib);
     });
     GILLock::Init();
     TypeConvInit();
