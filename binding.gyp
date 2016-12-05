@@ -17,6 +17,15 @@
             "conditions": [
                 ["OS=='win'", {
 
+                }, ["OS=='osx'", {
+                    "xcode_settings": {
+                        "OTHER_CFLAGS": [
+                            "<!(python3-config --includes)"
+                        ],
+                        "OTHER_LDFLAGS": [
+                            "<!(python3-config --ldflags)"
+                        ]
+                    }
                 }, {
                     "cflags": [
                         "<!(python3-config --includes)"
@@ -24,7 +33,7 @@
                     "ldflags": [
                         "<!(python3-config --ldflags)"
                     ]
-                }]
+                }]]
             ]
         }
     ]
