@@ -33,7 +33,7 @@ JsPyWrapper *JsPyWrapper::UnWrap(v8::Local<v8::Object> object) {
 v8::Local<v8::Object> JsPyWrapper::NewInstance(PyObjectWithRef object) {
     Nan::EscapableHandleScope scope;
     v8::Local<v8::Function> cons = Nan::New<v8::FunctionTemplate>(constructorTpl)->GetFunction();
-    v8::Local<v8::Object> instance = cons->NewInstance(0, {});
+    v8::Local<v8::Object> instance = Nan::NewInstance(cons, 0, {}).ToLocalChecked();
     JsPyWrapper *wrapper = UnWrap(instance);
     wrapper->SetObject(object, instance);
     return scope.Escape(instance);
@@ -48,7 +48,7 @@ v8::Local<v8::Object> JsPyWrapper::makeFunction(v8::Local<v8::Object> instance) 
     Nan::EscapableHandleScope scope;
     v8::Local<v8::ObjectTemplate> ctpl = Nan::New(callableTpl);
     v8::Local<v8::Object> callable = ctpl->NewInstance();
-    callable->SetPrototype(instance);
+    Nan::SetPrototype(callable, instance).ToChecked();
     return scope.Escape(callable);
 }
 
@@ -98,7 +98,7 @@ void JsPyWrapper::New(const Nan::FunctionCallbackInfo<v8::Value> &args) {
     v8::Local<v8::Object> thisObject;
     if (!args.IsConstructCall()) {
         v8::Local<v8::Function> cons = Nan::New(constructorTpl)->GetFunction();
-        thisObject = cons->NewInstance();
+        thisObject = Nan::NewInstance(cons).ToLocalChecked();
     } else {
         thisObject = args.This();
     }
