@@ -24,7 +24,7 @@ void performFunction(JsFunction *self) {
     }
     v8::Local<v8::Function> func = Nan::New(self->savedFunction);
     Nan::TryCatch trycatch;
-    v8::Local<v8::Value> result = func->Call(Nan::Undefined(), argc, argv.data());
+    v8::Local<v8::Value> result = func->Call(Nan::Undefined(), ssize_cast(argc), argv.data());
     if (trycatch.HasCaught()) {
         makePyError(trycatch);
         self->obj = nullptr;

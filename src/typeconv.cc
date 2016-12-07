@@ -21,12 +21,12 @@ v8::Local<v8::Value> PyToJs(PyObjectBorrowed pyObject, bool implicit) {
             Py_ssize_t size;
             char *str = PyUnicode_AsUTF8AndSize(pyObject, &size);
             if (!str) return scope.Escape(Nan::Undefined());
-            return scope.Escape(Nan::New(str, size).ToLocalChecked());
+            return scope.Escape(Nan::New(str, ssize_cast(size)).ToLocalChecked());
         } else if (PyBytes_CheckExact(pyObject)) {
             char *buf;
             Py_ssize_t size;
             PyBytes_AsStringAndSize(pyObject, &buf, &size);
-            return scope.Escape(Nan::CopyBuffer(buf, size).ToLocalChecked());
+            return scope.Escape(Nan::CopyBuffer(buf, ssize_cast(size)).ToLocalChecked());
         } else if (PyBool_Check(pyObject)) {
             return scope.Escape(Nan::New<v8::Boolean>(pyObject == Py_True));
         } else if (PyFloat_CheckExact(pyObject)) {
@@ -36,7 +36,7 @@ v8::Local<v8::Value> PyToJs(PyObjectBorrowed pyObject, bool implicit) {
             Py_ssize_t size = PyList_Size(pyObject);
             ASSERT(size >= 0);
             for (ssize_t i = 0; i < size; i++) {
-                jsArr->Set(i, PyToJs(PyList_GetItem(pyObject, i)));
+                jsArr->Set(ssize_cast(i), PyToJs(PyList_GetItem(pyObject, i)));
             }
             return scope.Escape(jsArr);
         } else if (PyDict_CheckExact(pyObject)) {
@@ -89,7 +89,7 @@ PyObjectWithRef JsToPy(v8::Local<v8::Value> jsValue) {
         v8::Local<v8::Array> jsArr = jsValue.As<v8::Array>();
         PyObjectWithRef pyArr = PyObjectWithRef(PyList_New(jsArr->Length()));
         for (ssize_t i = 0; i < jsArr->Length(); i++) {
-            int result = PyList_SetItem(pyArr, i, JsToPy(jsArr->Get(i)).escape());
+            int result = PyList_SetItem(pyArr, i, JsToPy(jsArr->Get(ssize_cast(i))).escape());
             ASSERT(result != -1);
         }
         return pyArr;
@@ -108,7 +108,7 @@ PyObjectWithRef JsToPy(v8::Local<v8::Value> jsValue) {
         PyObjectWithRef pyDict = PyObjectWithRef(PyDict_New());
         v8::Local<v8::Array> props = Nan::GetOwnPropertyNames(jsObject).ToLocalChecked();
         for (ssize_t i = 0; i < props->Length(); i++) {
-            v8::Local<v8::Value> jsKey = props->Get(i);
+            v8::Local<v8::Value> jsKey = props->Get(ssize_cast(i));
             v8::Local<v8::Value> jsValue = jsObject->Get(jsKey);
             int result = PyDict_SetItem(pyDict, JsToPy(jsKey), JsToPy(jsValue));
             ASSERT(result != -1);
@@ -127,7 +127,7 @@ v8::Local<v8::Value> PyTupleToJsArray(PyObjectBorrowed pyObject) {
     ssize_t size = PyTuple_Size(pyObject);
     ASSERT(size > 0);
     for (ssize_t i = 0; i < size; i++) {
-        arr->Set(i, PyToJs(PyTuple_GetItem(pyObject, i)));
+        arr->Set(ssize_cast(i), PyToJs(PyTuple_GetItem(pyObject, i)));
     }
     return scope.Escape(arr);
 }
@@ -138,7 +138,7 @@ PyObjectWithRef JsArrayToPyTuple(v8::Local<v8::Value> jsValue) {
     ssize_t size = arr->Length();
     PyObjectWithRef tup(PyTuple_New(size));
     for (ssize_t i = 0; i < size; i++) {
-        PyTuple_SetItem(tup, i, JsToPy(arr->Get(i)).escape());
+        PyTuple_SetItem(tup, i, JsToPy(arr->Get(ssize_cast(i))).escape());
     }
     return tup;
 }

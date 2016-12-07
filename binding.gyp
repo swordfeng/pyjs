@@ -31,7 +31,9 @@
                 }],
                 ["OS=='linux'", {
                     "cflags": [
-                        "<!(python3-config --cflags | sed 's/-Wstrict-prototypes//')"
+                        "<!(python3-config --cflags | sed 's/-Wstrict-prototypes//')",
+                        "-Waddress",
+                        "-Wconversion"
                     ],
                     "ldflags": [
                         "<!(python3-config --ldflags)"

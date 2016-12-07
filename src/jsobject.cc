@@ -244,7 +244,7 @@ void JsPyWrapper::Call(const Nan::FunctionCallbackInfo<v8::Value> &args) {
         v8::Local<v8::Array> jsArgs = args[0].As<v8::Array>();
         pyArgs = PyObjectWithRef(PyTuple_New(jsArgs->Length()));
         for (ssize_t i = 0; i < jsArgs->Length(); i++) {
-            int result = PyTuple_SetItem(pyArgs, i, JsToPy(jsArgs->Get(i)).escape());
+            int result = PyTuple_SetItem(pyArgs, i, JsToPy(jsArgs->Get(ssize_cast(i))).escape());
             ASSERT(result != -1);
         }
         if (args[1]->IsObject()) {
@@ -252,7 +252,7 @@ void JsPyWrapper::Call(const Nan::FunctionCallbackInfo<v8::Value> &args) {
             pyKw = PyObjectWithRef(PyDict_New());
             v8::Local<v8::Array> keys = Nan::GetOwnPropertyNames(jsKw).ToLocalChecked();
             for (ssize_t i = 0; i < keys->Length(); i++) {
-                v8::Local<v8::Value> jsKey = keys->Get(i);
+                v8::Local<v8::Value> jsKey = keys->Get(ssize_cast(i));
                 v8::Local<v8::Value> jsValue = jsKw->Get(jsKey);
                 int result = PyDict_SetItem(pyKw, JsToPy(jsKey), JsToPy(jsValue));
                 ASSERT(result != -1);
@@ -276,7 +276,7 @@ void JsPyWrapper::CallFunction(const Nan::FunctionCallbackInfo<v8::Value> &args)
     // arguments
     PyObjectWithRef pyTuple(PyTuple_New(args.Length()));
     for (ssize_t i = 0; i < args.Length(); i++) {
-        int result = PyTuple_SetItem(pyTuple, i, JsToPy(args[i]).escape());
+        int result = PyTuple_SetItem(pyTuple, i, JsToPy(args[ssize_cast(i)]).escape());
         ASSERT(result != -1);
     }
     args.GetReturnValue().Set(PyToJs(PyObjectWithRef(PyObject_CallObject(pyFunc, pyTuple)), implicitConversionEnabled));
