@@ -3,7 +3,9 @@
 #include <Python.h>
 #include <functional>
 #include <memory>
+#ifdef LINUX
 #include <dlfcn.h>
+#endif
 
 #include "jsobject.h"
 #include "typeconv.h"
@@ -12,7 +14,6 @@
 #include "gil-lock.h"
 #include "debug.h"
 #include "pymodule.h"
-
 
 class AtExit {
 public:
@@ -70,14 +71,19 @@ void Init(v8::Local<v8::Object> exports) {
     }
 
     // python initialize
-    void *python_lib = dlopen("libpython3.5m.so", RTLD_LAZY | RTLD_GLOBAL); // TODO: obtain library name from python-config?
+    void *python_lib;
+#ifdef LINUX
+    python_lib = dlopen(PYTHON_LIB, RTLD_LAZY | RTLD_GLOBAL);
+#endif
     Py_InitializeEx(0);
     // not working?
     //node::AtExit([] (void *) { Py_Finalize(); std::cout << "exit" << std::endl; });
     static AtExit exitHandler([python_lib] {
         if (!PyGILState_Check()) PyGILState_Ensure();
         Py_Finalize();
+#ifdef LINUX
         dlclose(python_lib);
+#endif
     });
     GILLock::Init();
     TypeConvInit();

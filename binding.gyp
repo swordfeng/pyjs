@@ -11,13 +11,14 @@
                 "src/pymodule.cc",
                 "src/error.cc"
             ],
-            "include_dirs" : [
+            "include_dirs": [
                 "<!(node -e \"require('nan')\")"
             ],
             "conditions": [
                 ["OS=='win'", {
 
-                }, ["OS=='osx'", {
+                }], 
+                ["OS=='mac'", {
                     "xcode_settings": {
                         "OTHER_CFLAGS": [
                             "<!(python3-config --includes)"
@@ -26,15 +27,20 @@
                             "<!(python3-config --ldflags)"
                         ]
                     }
-                }, {
+                }],
+                ["OS=='linux'", {
                     "cflags": [
                         "<!(python3-config --includes)"
                     ],
                     "ldflags": [
                         "<!(python3-config --ldflags)"
+                    ],
+                    "defines": [
+                        "LINUX",
+                        "PYTHON_LIB=\"<!(python-config --libs | sed 's/-l\\(python\\S*\\).*/lib\\1.so/')\""
                     ]
-                }]]
+                }]
             ]
-        }
-    ]
+    }
+]
 }
