@@ -8,7 +8,7 @@ Under heavy development
 + Add assertions in native functions
 + Make convenient ways to do python add, sub, ... expressions in javascript
 + Resolve circular reference between Python and JavaScript (may be difficult!)
-+ Fix python read from stdin in node repl (get EOF error currently)
++ Fix python read from stdin in node repl (get EOF error currently) - maybe use asyncio?
 + ~~Use `SetNamedPropertyHandler` instead of set seperately for each PyObject~~
 + ~~Use `SetCallAsFunctionHandler` instead of wrap it for each callable PyObject~~
 + ~~RAII wrapper for Python objects~~

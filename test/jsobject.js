@@ -31,7 +31,7 @@ describe('PyObject', function () {
             assert.deepEqual([1, 'aa', false], arr);
         });
         it('buffer <---> bytes', function () {
-            var bytes = new PyObject(Buffer('abcd', 'utf8'));
+            var bytes = new PyObject(new Buffer('abcd', 'utf8'));
             assert.equal('b\'abcd\'', bytes.toString());
             var newBuf = bytes.$value();
             assert(newBuf instanceof Buffer);
