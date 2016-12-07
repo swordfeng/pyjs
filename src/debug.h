@@ -6,7 +6,6 @@
 extern "C" {
 #endif
 
-#ifdef DEBUG
 #define ASSERT(cond) \
     do { \
         if(!(cond)) { \
@@ -18,6 +17,7 @@ extern "C" {
         } \
     } while(0)
 
+#ifdef DEBUG
 #define LOG(...) \
     do { \
         fflush(stdout); \
@@ -26,7 +26,6 @@ extern "C" {
         fprintf(stderr, "\33[0m\n"); \
     } while (0)
 #else
-#define ASSERT(cond)
 #define LOG(...)
 #endif
 
