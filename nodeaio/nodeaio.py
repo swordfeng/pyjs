@@ -1,10 +1,12 @@
 #!/usr/bin/python3
 import asyncio
 import threading
+loop = asyncio.get_event_loop()
 class LoopThread(threading.Thread):
     def __init__(self):
         super(LoopThread, self).__init__()
-        self.loop = asyncio.new_event_loop()
+        #self.loop = asyncio.new_event_loop()
+        self.loop = loop
         self.finalizing = False
     def run(self):
         asyncio.set_event_loop(self.loop)
