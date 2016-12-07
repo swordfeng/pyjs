@@ -71,7 +71,7 @@ v8::Local<v8::Value> makeJsErrorObject() {
     o->Set(Nan::New("stack").ToLocalChecked(), Nan::New(stackStream.str().c_str()).ToLocalChecked());
     o->Set(Nan::New("name").ToLocalChecked(), PyToJs(errName));
     o->Set(Nan::New("message").ToLocalChecked(), PyToJs(errMessage));
-    Nan::SetPrototype(o, jsError->Get(Nan::New("prototype").ToLocalChecked())).ToChecked();
+    Nan::SetPrototype(o, jsError->Get(Nan::New("prototype").ToLocalChecked())); // TODO: .ToChecked(); ?
     ASSERT(!PyErr_Occurred());
     return scope.Escape(o);
 }

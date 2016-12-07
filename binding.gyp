@@ -21,11 +21,14 @@
                 }],
                 ["OS=='mac'", {
                     "xcode_settings": {
-                        "OTHER_CFLAGS": [
-                            "<!(python3-config --includes)"
+                        "OTHER_CPLUSPLUSFLAGS": [
+                            "<!(python3-config --includes)",
+                            "-std=c++14",
+                            "-stdlib=libc++"
                         ],
                         "OTHER_LDFLAGS": [
-                            "<!(python3-config --ldflags)"
+                            "<!(python3-config --ldflags)",
+                            "-stdlib=libc++"
                         ]
                     }
                 }],

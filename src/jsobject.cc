@@ -48,7 +48,7 @@ v8::Local<v8::Object> JsPyWrapper::makeFunction(v8::Local<v8::Object> instance) 
     Nan::EscapableHandleScope scope;
     v8::Local<v8::ObjectTemplate> ctpl = Nan::New(callableTpl);
     v8::Local<v8::Object> callable = ctpl->NewInstance();
-    Nan::SetPrototype(callable, instance).ToChecked();
+    Nan::SetPrototype(callable, instance); // TODO: .ToChecked(); ?
     return scope.Escape(callable);
 }
 
