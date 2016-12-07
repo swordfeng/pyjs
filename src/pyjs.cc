@@ -1,6 +1,4 @@
-#include <node.h>
-#include <nan.h>
-#include <Python.h>
+#include "common.h"
 #include <functional>
 #include <memory>
 #ifdef LINUX

@@ -1,8 +1,6 @@
 #pragma once
 
-#include <Python.h>
-#include <node.h>
-#include <nan.h>
+#include "common.h"
 #include <uv.h>
 
 namespace JsPyModule {

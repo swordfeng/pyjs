@@ -1,7 +1,5 @@
 #pragma once
-#include <Python.h>
-#include <node.h>
-#include <nan.h>
+#include "common.h"
 
 // May return!
 #define CHECK_PYTHON_ERROR \

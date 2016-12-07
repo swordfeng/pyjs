@@ -16,8 +16,9 @@
             ],
             "conditions": [
                 ["OS=='win'", {
-
-                }], 
+                    "libraries": [ "<!(python -c \"from distutils import sysconfig; print(sysconfig.get_config_var('prefix')+'\\\\\\\\libs\\\\\\\\python'+sysconfig.get_config_var('VERSION')+'.lib');\")" ],
+                    "include_dirs": [ "<!(python -c \"from distutils import sysconfig; print(sysconfig.get_config_var('INCLUDEPY'));\")" ]
+                }],
                 ["OS=='mac'", {
                     "xcode_settings": {
                         "OTHER_CFLAGS": [
@@ -41,6 +42,6 @@
                     ]
                 }]
             ]
-    }
-]
+        }
+    ]
 }

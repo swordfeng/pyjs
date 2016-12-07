@@ -1,7 +1,5 @@
 #pragma once
-#include <node.h>
-#include <nan.h>
-#include <Python.h>
+#include "common.h"
 #include "python-util.h"
 void TypeConvInit();
 v8::Local<v8::Value> PyToJs(PyObjectBorrowed pyObject, bool implicit = true);

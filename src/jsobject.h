@@ -1,7 +1,5 @@
 #pragma once
-#include <node.h>
-#include <nan.h>
-#include <Python.h>
+#include "common.h"
 #include "python-util.h"
 
 class JsPyWrapper : public Nan::ObjectWrap {
