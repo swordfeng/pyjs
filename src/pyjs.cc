@@ -63,9 +63,11 @@ void Init(v8::Local<v8::Object> exports) {
         ->Get(Nan::New("argv").ToLocalChecked()).As<v8::Array>();
 
     if (jsArgv->Length() > 0) {
-        wchar_t *name = Py_DecodeLocale(*Nan::Utf8String(jsArgv->Get(0)->ToString()), nullptr);
+        //wchar_t *name = Py_DecodeLocale(*Nan::Utf8String(jsArgv->Get(0)->ToString()), nullptr);
+        PyObjectWithRef pyname(PyUnicode_DecodeLocale(*Nan::Utf8String(jsArgv->Get(0)->ToString()), nullptr));
+        wchar_t *name = PyUnicode_AsUnicode(pyname.borrow());
         Py_SetProgramName(name);
-        PyMem_RawFree(name);
+        //PyMem_RawFree(name);
     }
 
     // python initialize
@@ -91,12 +93,17 @@ void Init(v8::Local<v8::Object> exports) {
     int argc = jsArgv->Length();
     argc && --argc;
     std::unique_ptr<wchar_t *[]> argv(new wchar_t *[argc]);
+    std::vector<PyObjectWithRef> pyargv;
     for (int i = 0; i < argc; i++) {
-        argv[i] = Py_DecodeLocale(*Nan::Utf8String(jsArgv->Get(i + 1)->ToString()), nullptr);
+        PyObjectWithRef a(PyUnicode_DecodeLocale(*Nan::Utf8String(jsArgv->Get(i + 1)->ToString()), nullptr));
+        //argv[i] = Py_DecodeLocale(*Nan::Utf8String(jsArgv->Get(i + 1)->ToString()), nullptr);
+        argv[i] = PyUnicode_AsUnicode(a.borrow());
+        pyargv.push_back(a);
     }
     PySys_SetArgv(argc, argv.get());
     for (int i = 0; i < argc; i++) {
-        PyMem_RawFree(argv[i]);
+        //PyMem_RawFree(argv[i]);
+        pyargv.clear();
     }
 
     // py module init
