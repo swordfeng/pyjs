@@ -5,19 +5,12 @@ loop = asyncio.get_event_loop()
 class LoopThread(threading.Thread):
     def __init__(self):
         super(LoopThread, self).__init__()
-        #self.loop = asyncio.new_event_loop()
-        self.loop = loop
         self.finalizing = False
     def run(self):
-        asyncio.set_event_loop(self.loop)
-        self.loop.run_forever()
+        asyncio.set_event_loop(loop)
+        loop.run_forever()
         pending = asyncio.Task.all_tasks()
-        self.loop.run_until_complete(asyncio.gather(*pending))
-    def stop(self):
-        self.loop.call_soon_threadsafe(self.loop.stop)
-
-loopt = LoopThread()
-loopt.start()
+        loop.run_until_complete(asyncio.gather(*pending))
 
 class Thenable:
     def __init__(self, coro):
@@ -53,7 +46,11 @@ class Thenable:
         del self.resolve_handlers
         del self.reject_handlers
 
+LoopThread().start()
+
 def ensure_coroutine(coro):
     promise = Thenable(coro)
-    loopt.loop.call_soon_threadsafe(asyncio.ensure_future, promise.run())
+    loop.call_soon_threadsafe(asyncio.ensure_future, promise.run())
     return promise
+def stop():
+    loop.call_soon_threadsafe(loop.stop)
