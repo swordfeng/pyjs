@@ -30,7 +30,7 @@
                 }],
                 ["OS=='linux'", {
                     "cflags": [
-                        "<!(python3-config --includes)"
+                        "<!(python3-config --cflags | sed 's/-Wstrict-prototypes//')"
                     ],
                     "ldflags": [
                         "<!(python3-config --ldflags)"
