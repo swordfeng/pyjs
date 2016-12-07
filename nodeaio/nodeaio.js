@@ -1,12 +1,12 @@
 const py = require('..')
 const nodeaio = py.import('nodeaio.nodeaio')
 
-function ensure_coroutine(coro) {
+function aioco(coro) {
     return new Promise(nodeaio.ensure_coroutine(coro).then);
 }
 
+process.on('beforeExit', () => nodeaio.loopt.stop());
+
 module.exports = {
-    ensure_coroutine,
-    start: nodeaio.loopt.start,
-    stop: nodeaio.loopt.stop
+    aioco
 };
