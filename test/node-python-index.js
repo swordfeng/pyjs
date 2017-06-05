@@ -38,7 +38,7 @@ describe('node-python', function () {
         it('should throw an Error when importing a module that includes bad syntax', function () {
             expect(function () {
                 python.import('test.support.test');
-            }).throw(/SyntaxError: invalid syntax/)
+            }).throw(/invalid syntax/)
         });
     });
     it('should convert javascript null to python NoneType', function () {

@@ -64,8 +64,8 @@ void Init(v8::Local<v8::Object> exports) {
 
     if (jsArgv->Length() > 0) {
         //wchar_t *name = Py_DecodeLocale(*Nan::Utf8String(jsArgv->Get(0)->ToString()), nullptr);
-        PyObjectWithRef pyname(PyUnicode_DecodeLocale(*Nan::Utf8String(jsArgv->Get(0)->ToString()), nullptr));
-        wchar_t *name = PyUnicode_AsUnicode(pyname.borrow());
+        PyObject *pyname(PyUnicode_DecodeLocale(*Nan::Utf8String(jsArgv->Get(0)->ToString()), nullptr));
+        wchar_t *name = PyUnicode_AsUnicode(pyname);
         Py_SetProgramName(name);
         //PyMem_RawFree(name);
     }
