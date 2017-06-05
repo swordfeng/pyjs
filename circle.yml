@@ -1,4 +1,6 @@
 machine:
+  environment:
+    LD_LIBRARY_PATH: /opt/circleci/python/3.6.1/lib
   node:
     version: 6.1.0
   post:
