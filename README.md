@@ -1,6 +1,7 @@
 # pyjs
+[![CircleCI](https://circleci.com/gh/swordfeng/pyjs/tree/master.svg?style=svg)](https://circleci.com/gh/swordfeng/pyjs/tree/master)  
 Pyjs - Call Python code from Node.js in process  
-Under heavy development
+Work in progress
 
 ### TODO
 + Error handling for Javascript functions called in Python
@@ -9,8 +10,3 @@ Under heavy development
 + Make convenient ways to do python add, sub, ... expressions in javascript
 + Resolve circular reference between Python and JavaScript (may be difficult!)
 + Fix python read from stdin in node repl (get EOF error currently) - maybe use asyncio?
-+ ~~Use `SetNamedPropertyHandler` instead of set seperately for each PyObject~~
-+ ~~Use `SetCallAsFunctionHandler` instead of wrap it for each callable PyObject~~
-+ ~~RAII wrapper for Python objects~~
-+ ~~Call JavaScript from Python side~~
-+ ~~Multithread support (check calling from another thread is worked well)~~
