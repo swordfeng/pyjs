@@ -1,5 +1,5 @@
 machine:
   node:
     version: 6.1.0
-  python:
-    version: 3.6.1
+  post:
+    - pyenv global 2.7.12 3.6.1
