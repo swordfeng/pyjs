@@ -43,7 +43,7 @@
                     ],
                     "defines": [
                         "LINUX",
-                        "PYTHON_LIB=\"<!(python-config --libs | sed 's/-l\\(python\\S*\\).*/lib\\1.so/')\""
+                        "PYTHON_LIB=\"<!(python3-config --libs | sed 's/-l\\(python\\S*\\).*/lib\\1.so/')\""
                     ]
                 }]
             ]
