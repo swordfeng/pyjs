@@ -1,50 +1,19 @@
 dist: trusty
-language: python
-matrix:
-  include:
-    - addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - g++-5
-      python:
-        - "3.5"
-      env:
-        - MATRIX_EVAL="CC=gcc-5 && CXX=g++-5"
-        - TRAVIS_NODE_VERSION="5"
-    - addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - g++-6
-      python:
-        - "3.6"
-      env:
-        - MATRIX_EVAL="CC=gcc-6 && CXX=g++-6"
-        - TRAVIS_NODE_VERSION="7"
-    - addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - g++-6
-      python:
-        - "3.6"
-      env:
-        - MATRIX_EVAL="CC=gcc-6 && CXX=g++-6"
-        - TRAVIS_NODE_VERSION="8"
+language: node_js
+node_js:
+  - "7"
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
+      - g++-6
+env:
+  - MATRIX_EVAL="CC=gcc-6 && CXX=g++-6"
 before_install:
-  - curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.33.2/install.sh | bash
   - eval "${MATRIX_EVAL}"
-  - nvm install $TRAVIS_NODE_VERSION
-  - nvm use $TRAVIS_NODE_VERSION  
   - $CXX --version
   - node --version
+  - python3 --version
   - python3-config --cflags
   - python3-config --ldflags
-install:
-  - npm install
-script:
-  - npm test
