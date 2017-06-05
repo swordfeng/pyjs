@@ -39,6 +39,7 @@
                         "-Wconversion"
                     ],
                     "ldflags": [
+                        "-Wl,--no-as-needed",
                         "<!(python3-config --ldflags)"
                     ],
                     "defines": [
