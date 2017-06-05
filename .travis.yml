@@ -17,3 +17,5 @@ before_install:
   - python3 --version
   - python3-config --cflags
   - python3-config --ldflags
+before_script:
+  - ldd build/Release/obj.target/pyjs-native.node
