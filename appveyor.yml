@@ -1,0 +1,17 @@
+environment:
+  APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+  NODE_VERSION: 6
+
+install:
+  - ps: Install-Product node $env:NODE_VERSION
+  - set PATH=C:\Python36;%PATH%
+  - npm install --python=C:\Python27\python.exe
+
+test_script:
+  - python --version
+  - node --version
+  - npm --version
+  - npm test
+
+build: off
+
