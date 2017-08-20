@@ -1,7 +1,7 @@
 # pyjs
-[![CircleCI](https://circleci.com/gh/swordfeng/pyjs/tree/master.svg?style=svg)](https://circleci.com/gh/swordfeng/pyjs/tree/master)  
+[![CircleCI](https://circleci.com/gh/swordfeng/pyjs/tree/master.svg?style=shield)](https://circleci.com/gh/swordfeng/pyjs/tree/master)
+[![AppVeyor](https://ci.appveyor.com/api/projects/status/ms9u389g3i3kwpjd/branch/master?svg=true)](https://ci.appveyor.com/project/swordfeng/pyjs/branch/master)  
 Pyjs - Call Python code from Node.js in process  
-Work in progress
 
 ### TODO
 + Error handling for Javascript functions called in Python
