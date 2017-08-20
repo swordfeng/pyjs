@@ -1,6 +1,6 @@
 {
   "name": "pyjs",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Call Python code from Node.js side, in the same process",
   "main": "index.js",
   "scripts": {
@@ -18,10 +18,10 @@
   "homepage": "https://github.com/swordfeng/pyjs#readme",
   "dependencies": {
     "bindings": "^1.2.1",
-    "chai": "^4.0.1",
     "nan": "^2.6.2"
   },
   "devDependencies": {
+    "chai": "^4.0.1",
     "mocha": "^3.4.2"
   }
 }
